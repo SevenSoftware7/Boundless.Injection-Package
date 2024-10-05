@@ -12,12 +12,6 @@ public class InjectableAttribute : Attribute {
 
 	/// <summary>
 	/// The priority of the Injectable member in the Injection method.<para/>
-	/// The highest priority injectable member will have a value injected first.
-	/// </summary>
-	public int Priority;
-
-	/// <param name="priority">
-	/// The priority of the targeted member, it dictates how early a specific member will be updated when a value is injected.
 	/// Higher priority values mean the member will be updated first.
 	/// <example>
 	/// <code>
@@ -29,6 +23,12 @@ public class InjectableAttribute : Attribute {
 	/// </code>
 	/// </example>
 	/// Value2 will be updated before Value1
+	/// </summary>
+	public int Priority;
+
+	/// <param name="priority">
+	/// The priority of the targeted member, it dictates how early a specific member will be updated when a value is injected.<para/>
+	/// See <see cref="Priority"/>.
 	/// </param>
 	public InjectableAttribute(int priority = 0) {
 		Priority = priority;
