@@ -1,53 +1,16 @@
 namespace SevenDev.Boundless.Injection.Generators;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 [Generator]
 public class InjectableMemberGenerator : IIncrementalGenerator {
-	private static readonly Type InjectableAttribute = typeof(InjectableAttribute);
 	private static readonly string IInjectable = "IInjectable";
 	private static readonly string Inject = "Inject";
-
-
-	private static readonly DiagnosticDescriptor InjectableClassMustBePartialDescriptor = new(
-		id: "BD0001",
-		title: "Injectable member in non-partial class",
-		messageFormat: $"Class '{{0}}' with member marked with [{InjectableAttribute}] must be partial",
-		category: DiagnosticCategories.Injectable,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor BadInjectMethodParametersDescriptor = new(
-		id: "BD0002",
-		title: "Invalid parameters for Injectable method",
-		messageFormat: $"Method '{{0}}' marked with [{InjectableAttribute}] must have exactly one parameter",
-		category: DiagnosticCategories.Injectable,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor SetterlessPropertyDescriptor = new(
-		id: "BD0003",
-		title: "No setter in Injectable property",
-		messageFormat: $"Property '{{0}}' marked with [{InjectableAttribute}] must have a setter",
-		category: DiagnosticCategories.Injectable,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor ReadonlyFieldDescriptor = new(
-		id: "BD0004",
-		title: "Injectable field is read-only",
-		messageFormat: $"Field '{{0}}' marked with [{InjectableAttribute}] must not be read-only",
-		category: DiagnosticCategories.Injectable,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
 
 
 	public void Initialize(IncrementalGeneratorInitializationContext context) {
@@ -69,7 +32,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 								.SelectMany(attrList => attrList.Attributes)
 								.FirstOrDefault(attribute =>
 									semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
-									&& attributeSymbol.ToDisplayString() == InjectableAttribute.FullName
+									&& attributeSymbol.ToDisplayString() == InjectableAttribute.CachedType.FullName
 								)
 							))
 						.Where(tuple => tuple.attribute != default)
@@ -95,7 +58,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 				if (semanticModel.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol) continue;
 
 				if (!classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) {
-					spc.ReportDiagnostic(Diagnostic.Create(InjectableClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classSymbol.Name));
+					spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InjectableClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classSymbol.Name));
 					continue;
 				}
 
@@ -114,7 +77,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 
 					TypeSyntax? GetMethodUniqueParameterType(MethodDeclarationSyntax methodDeclaration) {
 						if (methodDeclaration.ParameterList.Parameters.Count != 1) {
-							spc.ReportDiagnostic(Diagnostic.Create(BadInjectMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						return methodDeclaration.ParameterList.Parameters[0].Type;
@@ -123,7 +86,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 						bool hasSetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration)) ?? false;
 
 						if (!hasSetter) {
-							spc.ReportDiagnostic(Diagnostic.Create(SetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.SetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						return propertyDeclaration.Type;
@@ -132,7 +95,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 						bool isReadonly = fieldDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
 
 						if (isReadonly) {
-							spc.ReportDiagnostic(Diagnostic.Create(ReadonlyFieldDescriptor, fieldDeclaration.Declaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.ReadonlyFieldDescriptor, fieldDeclaration.Declaration.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						return fieldDeclaration.Declaration.Type;
@@ -155,10 +118,10 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 
 								int priority = 0;
 
-								if (symbolInfo.Symbol?.ContainingType?.Name == InjectableAttribute.Name) {
+								if (symbolInfo.Symbol?.ContainingType?.Name == InjectableAttribute.CachedType.Name) {
 									ISymbol? memberSymbol = semanticModel.GetDeclaredSymbol(memberWithAttribute.MemberDeclaration);
 									AttributeData? attributeData = memberSymbol?.GetAttributes()
-										.FirstOrDefault(a => a.AttributeClass?.Name == InjectableAttribute.Name);
+										.FirstOrDefault(a => a.AttributeClass?.Name == InjectableAttribute.CachedType.Name);
 
 									priority = attributeData?.ConstructorArguments.FirstOrDefault().Value is int p ? p : 0;
 								}

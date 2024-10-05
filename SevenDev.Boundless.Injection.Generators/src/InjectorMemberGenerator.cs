@@ -1,6 +1,5 @@
 namespace SevenDev.Boundless.Injection.Generators;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,51 +9,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 [Generator]
 public class InjectorMemberGenerator : IIncrementalGenerator {
-	private static readonly Type InjectorAttribute = typeof(InjectorAttribute);
 	private static readonly string IInjector = "IInjector";
 	private static readonly string GetInjectValue = "GetInjectValue";
-
-
-	private static readonly DiagnosticDescriptor InjectorClassMustBePartialDescriptor = new(
-		id: "BD0101",
-		title: "Injector member in non-partial class",
-		messageFormat: $"Class '{{0}}' with member marked with [{InjectorAttribute}] must be partial",
-		category: DiagnosticCategories.Injector,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor BadInjectorMethodParametersDescriptor = new(
-		id: "BD0102",
-		title: "Unwanted parameters for Injector method",
-		messageFormat: $"Method '{{0}}' marked with [{InjectorAttribute}] must be parameterless",
-		category: DiagnosticCategories.Injector,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor VoidReturnTypeMethodDescriptor = new(
-		id: "BD0103",
-		title: "Void return type for Injector method",
-		messageFormat: $"Method '{{0}}' marked with [{InjectorAttribute}] must not have void return type",
-		category: DiagnosticCategories.Injector,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor GetterlessPropertyDescriptor = new(
-		id: "BD0104",
-		title: "No getter in Injector property",
-		messageFormat: $"Property '{{0}}' marked with [{InjectorAttribute}] must have a getter",
-		category: DiagnosticCategories.Injector,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor MultipleInjectorsOfTypeDescriptor = new(
-		id: "BD0105",
-		title: "Multiple Injectors of the same type",
-		messageFormat: $"Class '{{0}}' must not have multiple members with the same return type marked with [{InjectorAttribute}]",
-		category: DiagnosticCategories.Injector,
-		DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
 
 
 	public void Initialize(IncrementalGeneratorInitializationContext context) {
@@ -78,7 +34,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 								.SelectMany(attrList => attrList.Attributes)
 								.FirstOrDefault(attribute =>
 									semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
-									&& attributeSymbol.ToDisplayString() == InjectorAttribute.FullName
+									&& attributeSymbol.ToDisplayString() == InjectorAttribute.CachedType.FullName
 								)
 							))
 						.Where(tuple => tuple.attribute != default)
@@ -88,7 +44,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 						.SelectMany(attrList => attrList.Attributes)
 						.FirstOrDefault(attribute =>
 							semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
-							&& attributeSymbol.ToDisplayString() == InjectorAttribute.FullName
+							&& attributeSymbol.ToDisplayString() == InjectorAttribute.CachedType.FullName
 						);
 
 					return (classDeclaration, classInjectorAttribute, membersWithAttribute);
@@ -111,7 +67,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 
 
 				if (!classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) {
-					spc.ReportDiagnostic(Diagnostic.Create(InjectorClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classSymbol.Name));
+					spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InjectorClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classSymbol.Name));
 					continue;
 				}
 
@@ -130,11 +86,11 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 
 					TypeSyntax? GetMethodUniqueParameterType(MethodDeclarationSyntax methodDeclaration) {
 						if (methodDeclaration.ParameterList.Parameters.Count > 0) {
-							spc.ReportDiagnostic(Diagnostic.Create(BadInjectorMethodParametersDescriptor, methodDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectorMethodParametersDescriptor, methodDeclaration.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						if (methodDeclaration.ReturnType.ToString() == "Void") {
-							spc.ReportDiagnostic(Diagnostic.Create(VoidReturnTypeMethodDescriptor, methodDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.VoidReturnTypeMethodDescriptor, methodDeclaration.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						return methodDeclaration.ReturnType;
@@ -143,7 +99,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 						bool hasGetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.GetAccessorDeclaration)) ?? false;
 
 						if (!hasGetter) {
-							spc.ReportDiagnostic(Diagnostic.Create(GetterlessPropertyDescriptor, propertyDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.GetterlessPropertyDescriptor, propertyDeclaration.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						return propertyDeclaration.Type;
@@ -175,7 +131,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 				Dictionary<ISymbol?, MemberDeclarationSyntax> typeUniqueInjectors = typeInjectors
 					.Select<KeyValuePair<ITypeSymbol, List<MemberWithAttributeData>>, KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>?>(typeInjector => {
 						if (typeInjector.Value.Count > 1) {
-							spc.ReportDiagnostic(Diagnostic.Create(MultipleInjectorsOfTypeDescriptor, classDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.MultipleInjectorsOfTypeDescriptor, classDeclaration.GetLocation(), classSymbol.Name));
 							return null;
 						}
 						return new(typeInjector.Key, typeInjector.Value[0].MemberDeclaration);

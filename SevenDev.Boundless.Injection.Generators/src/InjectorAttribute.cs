@@ -8,5 +8,7 @@ using System;
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
 public class InjectorAttribute : Attribute {
+	internal static readonly Type CachedType = typeof(InjectorAttribute);
+
 	public InjectorAttribute() { }
 }

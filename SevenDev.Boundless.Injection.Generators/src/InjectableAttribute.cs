@@ -8,6 +8,8 @@ using System;
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
 public class InjectableAttribute : Attribute {
+	internal static readonly Type CachedType = typeof(InjectorAttribute);
+
 	/// <summary>
 	/// The priority of the Injectable member in the Injection method.<para/>
 	/// The highest priority injectable member will have a value injected first.
