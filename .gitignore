@@ -1,0 +1,6 @@
+# Compiled .NET files
+bin/
+obj/
+
+[Bb]uild
+*.csproj.old*
