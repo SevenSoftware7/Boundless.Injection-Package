@@ -23,14 +23,14 @@ public static class InjectionExtensions {
 	/// <typeparam name="T">The type of value which will be propagated</typeparam>
 	/// <param name="parent">The parent Node whose children will receive the value through propagation</param>
 	/// <param name="value">The value which will be propagated to the child Nodes</param>
-	/// <param name="ignoreParentBlocker">
-	/// Whether the propagation should not stop if the given <paramref name="parent"/> Node is an <see cref="IInjectionBlocker{T}"/><para/>
+	/// <param name="skipParent">
+	/// Whether the propagation should skip the given <paramref name="parent"/> Node and ignore it, if it is an <see cref="IInjectionBlocker{T}"/><para/>
 	/// <remark>
-	/// This is mostly used to prevent injections from stopping immediately when calling <see cref="PropagateInject{T}(IInjector{T})"/>
+	/// This is mostly used to prevent injections from stopping immediately or looping infinitely when calling <see cref="PropagateInject{T}(IInjector{T})"/>
 	/// </remark>
 	/// </param>
-	public static void PropagateInject<T>(this Node parent, T? value, bool ignoreParentBlocker = false) where T : notnull {
-		if (parent is IInjectable<T> injectableParent) {
+	public static void PropagateInject<T>(this Node parent, T? value, bool skipParent = false) where T : notnull {
+		if (!skipParent && parent is IInjectable<T> injectableParent) {
 			injectableParent.Inject(value);
 		}
 
@@ -38,7 +38,7 @@ public static class InjectionExtensions {
 		IInjectionBlocker<T>? blockerParent = parent as IInjectionBlocker<T>;
 
 		foreach (Node child in parent.GetChildren()) {
-			if (!ignoreParentBlocker && blockerParent is not null && blockerParent.ShouldBlock(child, value)) continue;
+			if (!skipParent && blockerParent is not null && blockerParent.ShouldBlock(child, value)) continue;
 
 			T? childValue = interceptorParent is not null ? interceptorParent.Intercept(child, value) : value;
 			child.PropagateInject(childValue);
