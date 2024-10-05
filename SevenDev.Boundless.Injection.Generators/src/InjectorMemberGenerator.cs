@@ -76,7 +76,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectorMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
 							return null;
 						}
-						if (methodDeclaration.ReturnType.ToString() == "void") {
+						if (methodDeclaration.ReturnType is PredefinedTypeSyntax predefinedReturnType && predefinedReturnType.Keyword.IsKind(SyntaxKind.VoidKeyword)) {
 							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.VoidReturnTypeMethodDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
 							return null;
 						}
