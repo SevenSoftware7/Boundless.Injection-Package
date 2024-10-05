@@ -26,15 +26,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 					SemanticModel semanticModel = context.SemanticModel;
 
 					(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
-						.Select(member => (
-							member,
-							attribute: member.AttributeLists
-								.SelectMany(attrList => attrList.Attributes)
-								.FirstOrDefault(attribute =>
-									semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
-									&& attributeSymbol.ToDisplayString() == InjectableAttribute.CachedType.FullName
-								)
-							))
+						.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectableAttribute.CachedType, semanticModel, cancellationToken)))
 						.Where(tuple => tuple.attribute != default)
 						.ToArray();
 

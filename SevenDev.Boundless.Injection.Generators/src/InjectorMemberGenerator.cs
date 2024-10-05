@@ -28,24 +28,11 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 					SemanticModel semanticModel = context.SemanticModel;
 
 					(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
-						.Select(member => (
-							member,
-							attribute: member.AttributeLists
-								.SelectMany(attrList => attrList.Attributes)
-								.FirstOrDefault(attribute =>
-									semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
-									&& attributeSymbol.ToDisplayString() == InjectorAttribute.CachedType.FullName
-								)
-							))
+						.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectorAttribute.CachedType, semanticModel, cancellationToken)))
 						.Where(tuple => tuple.attribute != default)
 						.ToArray();
 
-					AttributeSyntax? classInjectorAttribute = classDeclaration.AttributeLists
-						.SelectMany(attrList => attrList.Attributes)
-						.FirstOrDefault(attribute =>
-							semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
-							&& attributeSymbol.ToDisplayString() == InjectorAttribute.CachedType.FullName
-						);
+					AttributeSyntax? classInjectorAttribute = classDeclaration.AttributeLists.SelectOfType(InjectorAttribute.CachedType, semanticModel, cancellationToken);
 
 					return (classDeclaration, classInjectorAttribute, membersWithAttribute);
 				}
