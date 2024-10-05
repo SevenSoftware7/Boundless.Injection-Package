@@ -66,7 +66,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 				if (semanticModel.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol) continue;
 
 
-				if (!classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) {
+				if (!classDeclaration.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.PartialKeyword))) {
 					spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InjectorClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classSymbol.Name));
 					continue;
 				}
@@ -86,11 +86,11 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 
 					TypeSyntax? GetMethodUniqueParameterType(MethodDeclarationSyntax methodDeclaration) {
 						if (methodDeclaration.ParameterList.Parameters.Count > 0) {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectorMethodParametersDescriptor, methodDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectorMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
 							return null;
 						}
-						if (methodDeclaration.ReturnType.ToString() == "Void") {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.VoidReturnTypeMethodDescriptor, methodDeclaration.GetLocation(), classSymbol.Name));
+						if (methodDeclaration.ReturnType.ToString() == "void") {
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.VoidReturnTypeMethodDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
 							return null;
 						}
 						return methodDeclaration.ReturnType;
@@ -99,7 +99,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 						bool hasGetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.GetAccessorDeclaration)) ?? false;
 
 						if (!hasGetter) {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.GetterlessPropertyDescriptor, propertyDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.GetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), propertyDeclaration.Identifier.Text));
 							return null;
 						}
 						return propertyDeclaration.Type;
@@ -131,7 +131,7 @@ public class InjectorMemberGenerator : IIncrementalGenerator {
 				Dictionary<ISymbol?, MemberDeclarationSyntax> typeUniqueInjectors = typeInjectors
 					.Select<KeyValuePair<ITypeSymbol, List<MemberWithAttributeData>>, KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>?>(typeInjector => {
 						if (typeInjector.Value.Count > 1) {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.MultipleInjectorsOfTypeDescriptor, classDeclaration.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.MultipleInjectorsOfTypeDescriptor, classDeclaration.Identifier.GetLocation(), classDeclaration.Identifier.Text));
 							return null;
 						}
 						return new(typeInjector.Key, typeInjector.Value[0].MemberDeclaration);

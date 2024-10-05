@@ -8,7 +8,7 @@ using System;
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
 public class InjectableAttribute : Attribute {
-	internal static readonly Type CachedType = typeof(InjectorAttribute);
+	internal static readonly Type CachedType = typeof(InjectableAttribute);
 
 	/// <summary>
 	/// The priority of the Injectable member in the Injection method.<para/>

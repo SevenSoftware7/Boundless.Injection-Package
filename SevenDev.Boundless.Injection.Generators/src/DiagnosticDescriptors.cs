@@ -6,7 +6,7 @@ public static class DiagnosticDescriptors {
 	public static readonly DiagnosticDescriptor InjectableClassMustBePartialDescriptor = new(
 		id: "BD0001",
 		title: "Injectable member in non-partial class",
-		messageFormat: $"Class '{{0}}' with member marked with [{InjectableAttribute.CachedType}] must be partial",
+		messageFormat: $"Class '{{0}}' with member(s) marked with [{InjectableAttribute.CachedType}] must be partial",
 		category: DiagnosticCategories.Injectable,
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true
@@ -39,7 +39,7 @@ public static class DiagnosticDescriptors {
 	public static readonly DiagnosticDescriptor InjectorClassMustBePartialDescriptor = new(
 		id: "BD0101",
 		title: "Injector member in non-partial class",
-		messageFormat: $"Class '{{0}}' with member marked with [{InjectorAttribute.CachedType}] must be partial",
+		messageFormat: $"Class '{{0}}' with member(s) marked with [{InjectorAttribute.CachedType}] must be partial",
 		category: DiagnosticCategories.Injector,
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true

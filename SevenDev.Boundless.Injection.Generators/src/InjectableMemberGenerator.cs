@@ -58,7 +58,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 				if (semanticModel.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol) continue;
 
 				if (!classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) {
-					spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InjectableClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classSymbol.Name));
+					spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InjectableClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classDeclaration.Identifier.Text));
 					continue;
 				}
 
@@ -77,7 +77,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 
 					TypeSyntax? GetMethodUniqueParameterType(MethodDeclarationSyntax methodDeclaration) {
 						if (methodDeclaration.ParameterList.Parameters.Count != 1) {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
 							return null;
 						}
 						return methodDeclaration.ParameterList.Parameters[0].Type;
@@ -86,7 +86,7 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 						bool hasSetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration)) ?? false;
 
 						if (!hasSetter) {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.SetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), classSymbol.Name));
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.SetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), propertyDeclaration.Identifier.Text));
 							return null;
 						}
 						return propertyDeclaration.Type;
@@ -95,7 +95,8 @@ public class InjectableMemberGenerator : IIncrementalGenerator {
 						bool isReadonly = fieldDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
 
 						if (isReadonly) {
-							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.ReadonlyFieldDescriptor, fieldDeclaration.Declaration.GetLocation(), classSymbol.Name));
+							VariableDeclaratorSyntax fieldDeclarator = fieldDeclaration.Declaration.Variables[0];
+							spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.ReadonlyFieldDescriptor, fieldDeclarator.Identifier.GetLocation(), fieldDeclarator.Identifier.Text));
 							return null;
 						}
 						return fieldDeclaration.Declaration.Type;
