@@ -6,13 +6,13 @@ on:
       bumpType:
         description: 'Bump Type'
         required: true
-        default: 'bump-build'
+        default: '*.*.^.0'
         type: choice
         options:
-          - bump-major
-          - bump-minor
-          - bump-build
-          - bump-revision
+          - '^.0.0.0'
+          - '*.^.0.0'
+          - '*.*.^.0'
+          - '*.*.*.^'
 
 jobs:
   bump-project-version:
