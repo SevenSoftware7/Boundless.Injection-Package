@@ -1,6 +1,7 @@
 # Compiled .NET files
 bin/
 obj/
+nupkg/
 
 [Bb]uild
 *.csproj.old*
