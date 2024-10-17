@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SevenDev.Boundless.Injection</RootNamespace>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
 
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <CopyAllFiles>true</CopyAllFiles>
-    <RootNamespace>SevenDev.Boundless.Injection</RootNamespace>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <DebugType>portable</DebugType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

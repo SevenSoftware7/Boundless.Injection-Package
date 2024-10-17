@@ -1,6 +1,7 @@
-namespace SevenDev.Boundless.Injection.Generators;
+namespace SevenDev.Boundless.Injection.Generators {
 
-public static class DiagnosticCategories {
-	public static readonly string Injectable = "Injectable";
-	public static readonly string Injector = "Injector";
+	public static class DiagnosticCategories {
+		public static readonly string Injectable = "Injectable";
+		public static readonly string Injector = "Injector";
+	}
 }
