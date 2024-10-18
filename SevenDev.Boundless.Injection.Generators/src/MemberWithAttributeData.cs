@@ -2,22 +2,22 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SevenDev.Boundless.Injection.Generators {
 
-	internal readonly struct MemberWithAttributeData {
+	internal readonly struct MemberAndAttributeData {
 		public MemberDeclarationSyntax MemberDeclaration { get; }
 		public AttributeSyntax Attribute { get; }
 
-		public MemberWithAttributeData(MemberDeclarationSyntax MemberDeclaration, AttributeSyntax Attribute) {
+		public MemberAndAttributeData(MemberDeclarationSyntax MemberDeclaration, AttributeSyntax Attribute) {
 			this.MemberDeclaration = MemberDeclaration;
 			this.Attribute = Attribute;
 		}
 
 
-		public static implicit operator (MemberDeclarationSyntax memberDeclaration, AttributeSyntax attribute)(MemberWithAttributeData value) {
+		public static implicit operator (MemberDeclarationSyntax memberDeclaration, AttributeSyntax attribute)(MemberAndAttributeData value) {
 			return (value.MemberDeclaration, value.Attribute);
 		}
 
-		public static implicit operator MemberWithAttributeData((MemberDeclarationSyntax memberDeclaration, AttributeSyntax attribute) value) {
-			return new MemberWithAttributeData(value.memberDeclaration, value.attribute);
+		public static implicit operator MemberAndAttributeData((MemberDeclarationSyntax memberDeclaration, AttributeSyntax attribute) value) {
+			return new MemberAndAttributeData(value.memberDeclaration, value.attribute);
 		}
 	}
 }

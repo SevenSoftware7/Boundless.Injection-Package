@@ -15,24 +15,23 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 		public void Initialize(IncrementalGeneratorInitializationContext initializationContext) {
 			// Create a syntax provider to find class declarations with members having InjectableAttribute
-			var classDeclarationsWithAttributes = initializationContext.SyntaxProvider
-				.CreateSyntaxProvider(
-					predicate: (node, cancellationToken) => {
-						return node is ClassDeclarationSyntax classDeclaration && classDeclaration.Members.Any(member => member.AttributeLists.SelectMany(attrList => attrList.Attributes).Any());
-					},
+			var classDeclarationsWithAttributes = initializationContext.SyntaxProvider.CreateSyntaxProvider(
+				predicate: (node, cancellationToken) => {
+					return node is ClassDeclarationSyntax classDeclaration && classDeclaration.Members.Any(member => member.AttributeLists.SelectMany(attrList => attrList.Attributes).Any());
+				},
 
-					transform: (context, cancellationToken) => {
-						ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)context.Node;
-						SemanticModel semanticModel = context.SemanticModel;
+				transform: (context, cancellationToken) => {
+					ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)context.Node;
+					SemanticModel semanticModel = context.SemanticModel;
 
-						(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
-							.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectableAttribute.CachedType, semanticModel, cancellationToken)))
-							.Where(tuple => tuple.attribute != default)
-							.ToArray();
+					(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
+						.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectableAttribute.CachedType, semanticModel, cancellationToken)))
+						.Where(tuple => tuple.attribute != default)
+						.ToArray();
 
-						return (classDeclaration, membersWithAttribute);
-					}
-				);
+					return (classDeclaration, membersWithAttribute);
+				}
+			);
 
 
 			// Combine the semantic model with the class declarations
@@ -54,95 +53,23 @@ namespace SevenDev.Boundless.Injection.Generators {
 						continue;
 					}
 
-
-					Dictionary<ITypeSymbol, List<MemberWithAttributeData>> typeInjectables = new Dictionary<ITypeSymbol, List<MemberWithAttributeData>>(SymbolEqualityComparer.Default);
-
-					foreach ((MemberDeclarationSyntax memberSyntax, AttributeSyntax attribute) in membersInfo) {
-						TypeSyntax typeSyntax;
-						switch(memberSyntax) {
-							case MethodDeclarationSyntax methodDeclaration:
-								typeSyntax = GetMethodUniqueParameterType(methodDeclaration);
-								break;
-							case PropertyDeclarationSyntax propertyDeclaration:
-								typeSyntax = GetPropertyType(propertyDeclaration);
-								break;
-							case FieldDeclarationSyntax fieldDeclaration:
-								typeSyntax = GetFieldType(fieldDeclaration);
-								break;
-							default:
-								continue;
-						}
-						if (typeSyntax is null || !(semanticModel.GetTypeInfo(typeSyntax).Type is ITypeSymbol typeSymbol)) continue;
-
-
-						TypeSyntax GetMethodUniqueParameterType(MethodDeclarationSyntax methodDeclaration) {
-							if (methodDeclaration.ParameterList.Parameters.Count != 1) {
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
-								return null;
-							}
-							return methodDeclaration.ParameterList.Parameters[0].Type;
-						}
-						TypeSyntax GetPropertyType(PropertyDeclarationSyntax propertyDeclaration) {
-							bool hasSetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration)) ?? false;
-
-							if (!hasSetter) {
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.SetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), propertyDeclaration.Identifier.Text));
-								return null;
-							}
-							return propertyDeclaration.Type;
-						}
-						TypeSyntax GetFieldType(FieldDeclarationSyntax fieldDeclaration) {
-							bool isReadonly = fieldDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
-
-							if (isReadonly) {
-								VariableDeclaratorSyntax fieldDeclarator = fieldDeclaration.Declaration.Variables[0];
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.ReadonlyFieldDescriptor, fieldDeclarator.Identifier.GetLocation(), fieldDeclarator.Identifier.Text));
-								return null;
-							}
-							return fieldDeclaration.Declaration.Type;
-						}
-
-						ITypeSymbol nonNullableTypeSymbol = typeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-						if (!typeInjectables.TryGetValue(nonNullableTypeSymbol, out var injectables)) {
-							injectables = new List<MemberWithAttributeData>();
-							typeInjectables[nonNullableTypeSymbol] = injectables;
-						}
-						injectables.Add((memberSyntax, attribute));
+					ResultOrDiagnostic<IEnumerable<InjectableMemberTypeData>> injectableMemberData = InjectableMemberTypeData.GetInjectableMemberTypeDataOrError(membersInfo, semanticModel);
+					if (injectableMemberData.HasDiagnostic) {
+						spc.ReportDiagnostic(injectableMemberData.Diagnostic);
+						continue;
 					}
-					if (typeInjectables.Count == 0) continue;
 
-					Dictionary<ISymbol, List<(MemberDeclarationSyntax memberDeclaration, int priority)>> typesWithPrioritizedMembers = typeInjectables
-						.Select(typeInjector =>
-							new KeyValuePair<ITypeSymbol, List<(MemberDeclarationSyntax memberDeclaration, int priority)>>(typeInjector.Key, typeInjector.Value
-								.Select(memberWithAttribute => {
-									SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberWithAttribute.Attribute);
+					if (!injectableMemberData.HasResult || injectableMemberData.Result.Count() == 0) continue;
 
-									int priority = 0;
-
-									if (symbolInfo.Symbol?.ContainingType?.Name == InjectableAttribute.CachedType.Name) {
-										ISymbol memberSymbol = semanticModel.GetDeclaredSymbol(memberWithAttribute.MemberDeclaration);
-										AttributeData attributeData = memberSymbol?.GetAttributes()
-											.FirstOrDefault(a => a.AttributeClass?.Name == InjectableAttribute.CachedType.Name);
-
-										priority = attributeData?.ConstructorArguments.FirstOrDefault().Value is int p ? p : 0;
-									}
-
-									return (memberWithAttribute.MemberDeclaration, priority);
-								})
-								.ToList()
-							)
-						)
-						.ToDictionary(keySelector: pair => pair.Key, elementSelector: pair => pair.Value, SymbolEqualityComparer.Default);
-
-					spc.AddSource($"{classSymbol}_Injectable.generated.cs", GenerateCode(classSymbol, typesWithPrioritizedMembers).ToString());
+					spc.AddSource($"{classSymbol}_Injectable.generated.cs", GenerateCode(classSymbol, injectableMemberData.Result).ToString());
 				}
 			});
 		}
 
-		private static StringBuilder GenerateCode(INamedTypeSymbol classSymbol, Dictionary<ISymbol, List<(MemberDeclarationSyntax memberDeclaration, int priority)>> typeInjectables) {
+		private static StringBuilder GenerateCode(INamedTypeSymbol classSymbol, IEnumerable<InjectableMemberTypeData> typeInjectables) {
 			StringBuilder codeBuilder = new StringBuilder();
 
-			IEnumerable<string> implementedInterfaces = typeInjectables.Keys
+			IEnumerable<string> implementedInterfaces = typeInjectables.Select(data => data.Symbol)
 				.OfType<ISymbol>()
 				.Select(typeSymbol => $"{IInjectable}<{typeSymbol.ToDisplayString()}>");
 			string implementedInterfacesString = string.Join(", ", implementedInterfaces);
@@ -156,14 +83,12 @@ namespace SevenDev.Boundless.Injection.Generators {
 			codeBuilder.AppendLine("{");
 
 			foreach (var item in typeInjectables) {
-				if (!(item.Key is ITypeSymbol typeSymbol)) continue;
-
-				codeBuilder.AppendLine($"    void {IInjectable}<{typeSymbol}>.{Inject}({typeSymbol} value)");
+				codeBuilder.AppendLine($"    void {IInjectable}<{item.Symbol}>.{Inject}({item.Symbol} @value)");
 				codeBuilder.AppendLine("    {");
 
-				IEnumerable<MemberDeclarationSyntax> members = item.Value
-					.OrderByDescending(member => member.priority)
-					.Select(member => member.memberDeclaration);
+				IEnumerable<MemberDeclarationSyntax> members = item.Members
+					.OrderByDescending(member => member.Priority)
+					.Select(member => member.MemberDeclaration);
 
 				foreach (MemberDeclarationSyntax memberDeclaration in members) {
 					string memberInjectBody;

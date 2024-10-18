@@ -59,7 +59,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 					}
 
 
-					Dictionary<ITypeSymbol, List<MemberWithAttributeData>> typeInjectors = new Dictionary<ITypeSymbol, List<MemberWithAttributeData>>(SymbolEqualityComparer.Default);
+					Dictionary<ITypeSymbol, List<MemberAndAttributeData>> typeInjectors = new Dictionary<ITypeSymbol, List<MemberAndAttributeData>>(SymbolEqualityComparer.Default);
 
 					foreach ((MemberDeclarationSyntax memberSyntax, AttributeSyntax attribute) in membersInfo) {
 						TypeSyntax typeSyntax = null;
@@ -105,7 +105,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 						ITypeSymbol nonNullableTypeSymbol = typeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
 						if (!typeInjectors.TryGetValue(nonNullableTypeSymbol, out var injectables)) {
-							injectables = new List<MemberWithAttributeData>();
+							injectables = new List<MemberAndAttributeData>();
 							typeInjectors[nonNullableTypeSymbol] = injectables;
 						}
 						injectables.Add((memberSyntax, attribute));
@@ -114,7 +114,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 					if (!(classInjectorAttribute is null)) {
 						ITypeSymbol nonNullableClassSymbol = classSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
 						if (!typeInjectors.TryGetValue(nonNullableClassSymbol, out var injectables)) {
-							injectables = new List<MemberWithAttributeData>();
+							injectables = new List<MemberAndAttributeData>();
 							typeInjectors[nonNullableClassSymbol] = injectables;
 						}
 						injectables.Add((classDeclaration, classInjectorAttribute));
@@ -124,7 +124,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 
 					Dictionary<ISymbol, MemberDeclarationSyntax> typeUniqueInjectors = typeInjectors
-						.Select<KeyValuePair<ITypeSymbol, List<MemberWithAttributeData>>, KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>?>(typeInjector => {
+						.Select<KeyValuePair<ITypeSymbol, List<MemberAndAttributeData>>, KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>?>(typeInjector => {
 							if (typeInjector.Value.Count > 1) {
 								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.MultipleInjectorsOfTypeDescriptor, classDeclaration.Identifier.GetLocation(), classDeclaration.Identifier.Text));
 								return null;
