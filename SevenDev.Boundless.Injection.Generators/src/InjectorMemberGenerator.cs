@@ -146,41 +146,42 @@ namespace SevenDev.Boundless.Injection.Generators {
 			codeBuilder.AppendLine("using System;");
 			codeBuilder.AppendLine("using SevenDev.Boundless.Injection;");
 			codeBuilder.AppendLine();
-			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace};");
-			codeBuilder.AppendLine();
-			codeBuilder.AppendLine($"public partial class {classSymbol.Name} : {string.Join(", ", typeInjectors.Keys.Select(typeSymbol => $"{IInjector}<{typeSymbol}>"))}");
+			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace}");
 			codeBuilder.AppendLine("{");
+			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {string.Join(", ", typeInjectors.Keys.Select(typeSymbol => $"{IInjector}<{typeSymbol}>"))}");
+			codeBuilder.AppendLine("    {");
 
 			foreach (var item in typeInjectors) {
 				if (!(item.Key is ITypeSymbol typeSymbol)) continue;
 				MemberDeclarationSyntax memberDeclaration = item.Value;
 
-				codeBuilder.AppendLine($"    {typeSymbol} {IInjector}<{typeSymbol}>.{GetInjectValue}()");
-				codeBuilder.AppendLine("    {");
+				codeBuilder.AppendLine($"        {typeSymbol} {IInjector}<{typeSymbol}>.{GetInjectValue}()");
+				codeBuilder.AppendLine("        {");
 
 				string memberInjectValueBody;
 				switch (memberDeclaration) {
 					case ClassDeclarationSyntax classDeclaration:
-						memberInjectValueBody = $"new {classDeclaration.Identifier.Text}()";
+						memberInjectValueBody = "this";
 						break;
 					case MethodDeclarationSyntax methodDeclaration:
-						memberInjectValueBody = $"{methodDeclaration.Identifier.Text}()";
+						memberInjectValueBody = $"this.{methodDeclaration.Identifier.Text}()";
 						break;
 					case PropertyDeclarationSyntax propertyDeclaration:
-						memberInjectValueBody = propertyDeclaration.Identifier.Text;
+						memberInjectValueBody = $"this.{propertyDeclaration.Identifier.Text}";
 						break;
 					case FieldDeclarationSyntax fieldDeclaration:
-						memberInjectValueBody = fieldDeclaration.Declaration.Variables[0].Identifier.Text;
+						memberInjectValueBody = $"this.{fieldDeclaration.Declaration.Variables[0].Identifier.Text}";
 						break;
 					default:
 						memberInjectValueBody = "default";
 						break;
 				}
 
-				codeBuilder.AppendLine($"        return {memberInjectValueBody};");
+				codeBuilder.AppendLine($"            return {memberInjectValueBody};");
 
-				codeBuilder.AppendLine("    }");
+				codeBuilder.AppendLine("        }");
 			}
+			codeBuilder.AppendLine("    }");
 			codeBuilder.AppendLine("}");
 
 			return codeBuilder;

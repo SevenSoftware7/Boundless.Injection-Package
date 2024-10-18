@@ -150,16 +150,16 @@ namespace SevenDev.Boundless.Injection.Generators {
 			codeBuilder.AppendLine("using System;");
 			codeBuilder.AppendLine("using SevenDev.Boundless.Injection;");
 			codeBuilder.AppendLine();
-			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace};");
-			codeBuilder.AppendLine();
-			codeBuilder.AppendLine($"public partial class {classSymbol.Name} : {implementedInterfacesString}");
+			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace}");
 			codeBuilder.AppendLine("{");
+			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {implementedInterfacesString}");
+			codeBuilder.AppendLine("    {");
 
 			foreach (var item in typeInjectables) {
 				if (!(item.Key is ITypeSymbol typeSymbol)) continue;
 
-				codeBuilder.AppendLine($"    void {IInjectable}<{typeSymbol}>.{Inject}({typeSymbol} value)");
-				codeBuilder.AppendLine("    {");
+				codeBuilder.AppendLine($"        void {IInjectable}<{typeSymbol}>.{Inject}({typeSymbol} @value)");
+				codeBuilder.AppendLine("        {");
 
 				IEnumerable<MemberDeclarationSyntax> members = item.Value
 					.OrderByDescending(member => member.priority)
@@ -169,23 +169,24 @@ namespace SevenDev.Boundless.Injection.Generators {
 					string memberInjectBody;
 					switch (memberDeclaration) {
 						case MethodDeclarationSyntax methodDeclaration:
-							memberInjectBody = $"{methodDeclaration.Identifier.Text}(value)";
+							memberInjectBody = $"this.{methodDeclaration.Identifier.Text}(@value)";
 							break;
 						case PropertyDeclarationSyntax propertyDeclaration:
-							memberInjectBody = $"{propertyDeclaration.Identifier.Text} = value";
+							memberInjectBody = $"this.{propertyDeclaration.Identifier.Text} = @value";
 							break;
 						case FieldDeclarationSyntax fieldDeclaration:
-							memberInjectBody = $"{fieldDeclaration.Declaration.Variables[0].Identifier.Text} = value";
+							memberInjectBody = $"this.{fieldDeclaration.Declaration.Variables[0].Identifier.Text} = @value";
 							break;
 						default:
 							memberInjectBody = "default";
 							break;
 					}
-					codeBuilder.AppendLine($"        {memberInjectBody};");
+					codeBuilder.AppendLine($"            {memberInjectBody};");
 				}
 
-				codeBuilder.AppendLine("    }");
+				codeBuilder.AppendLine("        }");
 			}
+			codeBuilder.AppendLine("    }");
 			codeBuilder.AppendLine("}");
 
 			return codeBuilder;
