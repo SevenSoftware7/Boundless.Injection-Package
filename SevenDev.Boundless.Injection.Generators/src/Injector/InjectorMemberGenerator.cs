@@ -15,28 +15,27 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 		public void Initialize(IncrementalGeneratorInitializationContext initializationContext) {
 			// Create a syntax provider to find class declarations with members having InjectableAttribute
-			var classDeclarationsWithAttributes = initializationContext.SyntaxProvider
-				.CreateSyntaxProvider(
-					predicate: (node, cancellationToken) => {
-						return node is ClassDeclarationSyntax classDeclaration &&
-							(classDeclaration.AttributeLists.SelectMany(attrList => attrList.Attributes).Any() ||
-							classDeclaration.Members.Any(member => member.AttributeLists.SelectMany(attrList => attrList.Attributes).Any()));
-					},
+			var classDeclarationsWithAttributes = initializationContext.SyntaxProvider.CreateSyntaxProvider(
+				predicate: (node, cancellationToken) => {
+					return node is ClassDeclarationSyntax classDeclaration &&
+						(classDeclaration.AttributeLists.SelectMany(attrList => attrList.Attributes).Any() ||
+						classDeclaration.Members.Any(member => member.AttributeLists.SelectMany(attrList => attrList.Attributes).Any()));
+				},
 
-					transform: (context, cancellationToken) => {
-						ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)context.Node;
-						SemanticModel semanticModel = context.SemanticModel;
+				transform: (context, cancellationToken) => {
+					ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)context.Node;
+					SemanticModel semanticModel = context.SemanticModel;
 
-						(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
-							.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectorAttribute.CachedType, semanticModel, cancellationToken)))
-							.Where(tuple => tuple.attribute != default)
-							.ToArray();
+					(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
+						.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectorAttribute.CachedType, semanticModel, cancellationToken)))
+						.Where(tuple => tuple.attribute != default)
+						.ToArray();
 
-						AttributeSyntax classInjectorAttribute = classDeclaration.AttributeLists.SelectOfType(InjectorAttribute.CachedType, semanticModel, cancellationToken);
+					AttributeSyntax classInjectorAttribute = classDeclaration.AttributeLists.SelectOfType(InjectorAttribute.CachedType, semanticModel, cancellationToken);
 
-						return (classDeclaration, classInjectorAttribute, membersWithAttribute);
-					}
-				);
+					return (classDeclaration, classInjectorAttribute, membersWithAttribute);
+				}
+			);
 
 
 			// Combine the semantic model with the class declarations
@@ -59,103 +58,38 @@ namespace SevenDev.Boundless.Injection.Generators {
 					}
 
 
-					Dictionary<ITypeSymbol, List<MemberAndAttributeData>> typeInjectors = new Dictionary<ITypeSymbol, List<MemberAndAttributeData>>(SymbolEqualityComparer.Default);
-
-					foreach ((MemberDeclarationSyntax memberSyntax, AttributeSyntax attribute) in membersInfo) {
-						TypeSyntax typeSyntax = null;
-						switch (memberSyntax) {
-							case MethodDeclarationSyntax methodDeclaration:
-								typeSyntax = GetMethodUniqueParameterType(methodDeclaration);
-								break;
-							case PropertyDeclarationSyntax propertyDeclaration:
-								typeSyntax = GetPropertyType(propertyDeclaration);
-								break;
-							case FieldDeclarationSyntax fieldDeclaration:
-								typeSyntax = GetFieldType(fieldDeclaration);
-								break;
-							default:
-								continue;
-						}
-						if (typeSyntax is null || !(semanticModel.GetTypeInfo(typeSyntax).Type is ITypeSymbol typeSymbol)) continue;
-
-
-						TypeSyntax GetMethodUniqueParameterType(MethodDeclarationSyntax methodDeclaration) {
-							if (methodDeclaration.ParameterList.Parameters.Count > 0) {
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.BadInjectorMethodParametersDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
-								return null;
-							}
-							if (methodDeclaration.ReturnType is PredefinedTypeSyntax predefinedReturnType && predefinedReturnType.Keyword.IsKind(SyntaxKind.VoidKeyword)) {
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.VoidReturnTypeMethodDescriptor, methodDeclaration.Identifier.GetLocation(), methodDeclaration.Identifier.Text));
-								return null;
-							}
-							return methodDeclaration.ReturnType;
-						}
-						TypeSyntax GetPropertyType(PropertyDeclarationSyntax propertyDeclaration) {
-							bool hasGetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.GetAccessorDeclaration)) ?? false;
-
-							if (!hasGetter) {
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.GetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), propertyDeclaration.Identifier.Text));
-								return null;
-							}
-							return propertyDeclaration.Type;
-						}
-						TypeSyntax GetFieldType(FieldDeclarationSyntax fieldDeclaration) {
-							return fieldDeclaration.Declaration.Type;
-						}
-
-						ITypeSymbol nonNullableTypeSymbol = typeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-						if (!typeInjectors.TryGetValue(nonNullableTypeSymbol, out var injectables)) {
-							injectables = new List<MemberAndAttributeData>();
-							typeInjectors[nonNullableTypeSymbol] = injectables;
-						}
-						injectables.Add((memberSyntax, attribute));
+					ResultOrDiagnostic<IEnumerable<InjectorMemberTypeData>> injectorMemberData = InjectorMemberTypeData.GetInjectorMemberTypeDataOrError(membersInfo, semanticModel, classSymbol, classDeclaration, classInjectorAttribute);
+					if (injectorMemberData.HasDiagnostic) {
+						spc.ReportDiagnostic(injectorMemberData.Diagnostic);
+						continue;
 					}
-
-					if (!(classInjectorAttribute is null)) {
-						ITypeSymbol nonNullableClassSymbol = classSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-						if (!typeInjectors.TryGetValue(nonNullableClassSymbol, out var injectables)) {
-							injectables = new List<MemberAndAttributeData>();
-							typeInjectors[nonNullableClassSymbol] = injectables;
-						}
-						injectables.Add((classDeclaration, classInjectorAttribute));
-					}
-
-					if (typeInjectors.Count == 0) continue;
+					if (!injectorMemberData.HasResult || injectorMemberData.Result.Count() == 0) continue;
 
 
-					Dictionary<ISymbol, MemberDeclarationSyntax> typeUniqueInjectors = typeInjectors
-						.Select<KeyValuePair<ITypeSymbol, List<MemberAndAttributeData>>, KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>?>(typeInjector => {
-							if (typeInjector.Value.Count > 1) {
-								spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.MultipleInjectorsOfTypeDescriptor, classDeclaration.Identifier.GetLocation(), classDeclaration.Identifier.Text));
-								return null;
-							}
-							return new KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>(typeInjector.Key, typeInjector.Value[0].MemberDeclaration);
-						})
-						.OfType<KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>>()
-						.ToDictionary(keySelector: pair => pair.Key, elementSelector: pair => pair.Value, SymbolEqualityComparer.Default);
-
-
-					spc.AddSource($"{classSymbol}_Injector.generated.cs", GenerateCode(classSymbol, typeUniqueInjectors).ToString());
+					spc.AddSource($"{classSymbol}_Injector.generated.cs", GenerateCode(classSymbol, injectorMemberData.Result).ToString());
 				}
 			});
 		}
 
-		private static StringBuilder GenerateCode(INamedTypeSymbol classSymbol, Dictionary<ISymbol, MemberDeclarationSyntax> typeInjectors) {
+		private static StringBuilder GenerateCode(INamedTypeSymbol classSymbol, IEnumerable<InjectorMemberTypeData> typeInjectors) {
 			StringBuilder codeBuilder = new StringBuilder();
+
+			IEnumerable<string> implementedInterfaces = typeInjectors.Select(data => data.Symbol)
+				.Select(typeSymbol => $"{IInjector}<{typeSymbol.ToDisplayString()}>");
+			string implementedInterfacesString = string.Join(", ", implementedInterfaces);
 
 			codeBuilder.AppendLine("using System;");
 			codeBuilder.AppendLine("using SevenDev.Boundless.Injection;");
 			codeBuilder.AppendLine();
 			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace}");
 			codeBuilder.AppendLine("{");
-			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {string.Join(", ", typeInjectors.Keys.Select(typeSymbol => $"{IInjector}<{typeSymbol}>"))}");
+			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {implementedInterfacesString}");
 			codeBuilder.AppendLine("    {");
 
 			foreach (var item in typeInjectors) {
-				if (!(item.Key is ITypeSymbol typeSymbol)) continue;
-				MemberDeclarationSyntax memberDeclaration = item.Value;
+				MemberDeclarationSyntax memberDeclaration = item.Member.MemberDeclaration;
 
-				codeBuilder.AppendLine($"        {typeSymbol} {IInjector}<{typeSymbol}>.{GetInjectValue}()");
+				codeBuilder.AppendLine($"        {item.Symbol} {IInjector}<{item.Symbol}>.{GetInjectValue}()");
 				codeBuilder.AppendLine("        {");
 
 				string memberInjectValueBody;

@@ -17,7 +17,8 @@ namespace SevenDev.Boundless.Injection.Generators {
 			// Create a syntax provider to find class declarations with members having InjectableAttribute
 			var classDeclarationsWithAttributes = initializationContext.SyntaxProvider.CreateSyntaxProvider(
 				predicate: (node, cancellationToken) => {
-					return node is ClassDeclarationSyntax classDeclaration && classDeclaration.Members.Any(member => member.AttributeLists.SelectMany(attrList => attrList.Attributes).Any());
+					return node is ClassDeclarationSyntax classDeclaration
+						&& classDeclaration.Members.Any(member => member.AttributeLists.SelectMany(attrList => attrList.Attributes).Any());
 				},
 
 				transform: (context, cancellationToken) => {
@@ -45,21 +46,22 @@ namespace SevenDev.Boundless.Injection.Generators {
 					if (classDeclaration is null || membersInfo.Length == 0) continue;
 
 					SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-
 					if (!(semanticModel.GetDeclaredSymbol(classDeclaration) is INamedTypeSymbol classSymbol)) continue;
 
-					if (!classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))) {
+
+					if (!classDeclaration.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.PartialKeyword))) {
 						spc.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InjectableClassMustBePartialDescriptor, classDeclaration.Identifier.GetLocation(), classDeclaration.Identifier.Text));
 						continue;
 					}
+
 
 					ResultOrDiagnostic<IEnumerable<InjectableMemberTypeData>> injectableMemberData = InjectableMemberTypeData.GetInjectableMemberTypeDataOrError(membersInfo, semanticModel);
 					if (injectableMemberData.HasDiagnostic) {
 						spc.ReportDiagnostic(injectableMemberData.Diagnostic);
 						continue;
 					}
-
 					if (!injectableMemberData.HasResult || injectableMemberData.Result.Count() == 0) continue;
+
 
 					spc.AddSource($"{classSymbol}_Injectable.generated.cs", GenerateCode(classSymbol, injectableMemberData.Result).ToString());
 				}
@@ -70,7 +72,6 @@ namespace SevenDev.Boundless.Injection.Generators {
 			StringBuilder codeBuilder = new StringBuilder();
 
 			IEnumerable<string> implementedInterfaces = typeInjectables.Select(data => data.Symbol)
-				.OfType<ISymbol>()
 				.Select(typeSymbol => $"{IInjectable}<{typeSymbol.ToDisplayString()}>");
 			string implementedInterfacesString = string.Join(", ", implementedInterfaces);
 
