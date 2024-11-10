@@ -134,7 +134,8 @@ namespace SevenDev.Boundless.Injection.Generators {
 						)
 						.ToDictionary(keySelector: pair => pair.Key, elementSelector: pair => pair.Value, SymbolEqualityComparer.Default);
 
-					spc.AddSource($"{classSymbol}_Injectable.generated.cs", GenerateCode(classSymbol, typesWithPrioritizedMembers).ToString());
+					string fileName = Utility.GetFileLegalTypeString(classDeclaration, semanticModel);
+					spc.AddSource($"{fileName}_Injectable.generated.cs", GenerateCode(classSymbol, typesWithPrioritizedMembers).ToString());
 				}
 			});
 		}
@@ -152,7 +153,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 			codeBuilder.AppendLine();
 			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace}");
 			codeBuilder.AppendLine("{");
-			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {implementedInterfacesString}");
+			codeBuilder.AppendLine($"    {Utility.GetSymbolAccessibility(classSymbol)} partial {classSymbol.ToDisplayString(NullableFlowState.NotNull, Utility.ClassDeclarationNameFormat)} : {implementedInterfacesString}");
 			codeBuilder.AppendLine("    {");
 
 			foreach (var item in typeInjectables) {

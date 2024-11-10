@@ -134,8 +134,8 @@ namespace SevenDev.Boundless.Injection.Generators {
 						.OfType<KeyValuePair<ITypeSymbol, MemberDeclarationSyntax>>()
 						.ToDictionary(keySelector: pair => pair.Key, elementSelector: pair => pair.Value, SymbolEqualityComparer.Default);
 
-
-					spc.AddSource($"{classSymbol}_Injector.generated.cs", GenerateCode(classSymbol, typeUniqueInjectors).ToString());
+					string fileName = Utility.GetFileLegalTypeString(classDeclaration, semanticModel);
+					spc.AddSource($"{fileName}_Injector.generated.cs", GenerateCode(classSymbol, typeUniqueInjectors).ToString());
 				}
 			});
 		}
@@ -148,7 +148,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 			codeBuilder.AppendLine();
 			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace}");
 			codeBuilder.AppendLine("{");
-			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {string.Join(", ", typeInjectors.Keys.Select(typeSymbol => $"{IInjector}<{typeSymbol}>"))}");
+			codeBuilder.AppendLine($"    {Utility.GetSymbolAccessibility(classSymbol)} partial {classSymbol.ToDisplayString(NullableFlowState.NotNull, Utility.ClassDeclarationNameFormat)} : {string.Join(", ", typeInjectors.Keys.Select(typeSymbol => $"{IInjector}<{typeSymbol}>"))}");
 			codeBuilder.AppendLine("    {");
 
 			foreach (var item in typeInjectors) {
