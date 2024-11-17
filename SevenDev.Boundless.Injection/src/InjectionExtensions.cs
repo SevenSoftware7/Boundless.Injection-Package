@@ -43,10 +43,6 @@ public static class InjectionExtensions {
 	/// </remark>
 	/// </param>
 	private static void PropagateInjection<T>(Node parent, T? value, bool skipParent) where T : notnull {
-		if (!skipParent && parent is IInjectable<T> injectableParent) {
-			injectableParent.Inject(value);
-		}
-
 		IInjectionInterceptor<T>? interceptorParent = parent as IInjectionInterceptor<T>;
 		IInjectionBlocker<T>? blockerParent = parent as IInjectionBlocker<T>;
 
@@ -55,6 +51,10 @@ public static class InjectionExtensions {
 
 			T? childValue = interceptorParent is not null ? interceptorParent.Intercept(child, value) : value;
 			PropagateInjection(child, childValue, false);
+		}
+
+		if (!skipParent && parent is IInjectable<T> injectableParent) {
+			injectableParent.Inject(value);
 		}
 	}
 
