@@ -1,5 +1,6 @@
 namespace SevenDev.Boundless.Injection;
 
+using System.Collections.Generic;
 using Godot;
 
 /// <summary>
@@ -46,15 +47,20 @@ public static class InjectionExtensions {
 		IInjectionInterceptor<T>? interceptorParent = parent as IInjectionInterceptor<T>;
 		IInjectionBlocker<T>? blockerParent = parent as IInjectionBlocker<T>;
 
+		List<(Node child, T? childValue)> injections = [];
 		foreach (Node child in parent.GetChildren()) {
 			if (!skipParent && blockerParent is not null && blockerParent.ShouldBlock(child, value)) continue;
 
 			T? childValue = interceptorParent is not null ? interceptorParent.Intercept(child, value) : value;
-			PropagateInjection(child, childValue, false);
+			injections.Add((child, childValue));
 		}
 
 		if (!skipParent && parent is IInjectable<T> injectableParent) {
 			injectableParent.Inject(value);
+		}
+
+		foreach ((Node child, T? childValue) in injections) {
+			PropagateInjection(child, childValue, false);
 		}
 	}
 
