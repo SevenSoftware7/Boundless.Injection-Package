@@ -1,7 +1,5 @@
 namespace SevenDev.Boundless.Injection;
 
-using Godot;
-
 /// <summary>
 /// Allows a Node to block injection propagation to select children and/or for select injection values.
 /// </summary>
@@ -13,5 +11,5 @@ public interface IInjectionBlocker<in T> where T : notnull {
 	/// <param name="child">The child Node which could be blocked from being propagated to</param>
 	/// <param name="value">The value which will be propagated to the child in the case that propagation is not blocked</param>
 	/// <returns>Whether the injection propagation will be blocked</returns>
-	bool ShouldBlock(Node child, T? value) => true;
+	bool ShouldBlock(IInjectionNode child, T? value) => true;
 }
