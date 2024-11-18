@@ -9,29 +9,29 @@ public interface IInjectionNode {
 	/// <summary>
 	/// Returns the underlying object of the current node.
 	/// </summary>
-	public object GetObject();
+	public object UnderlyingObject { get; }
 
 	/// <summary>
 	/// Gets the parent node of the current node.
 	/// </summary>
 	/// <returns>The parent <see cref="IInjectionNode"/> if it exists; otherwise, <c>null</c>.</returns>
-	public IInjectionNode? GetParent();
+	public IInjectionNode? Parent { get; }
 
 	/// <summary>
 	/// Gets the child nodes of the current node.
 	/// </summary>
 	/// <returns>An <see cref="IEnumerable{T}"/> of child <see cref="IInjectionNode"/> objects.</returns>
-	public IEnumerable<IInjectionNode> GetChildren();
+	public IEnumerable<IInjectionNode> Children { get; }
 
 	/// <summary>
 	/// Determines whether the current node is ready.
 	/// </summary>
 	/// <returns><c>true</c> if the node is ready; otherwise, <c>false</c>.</returns>
-	public bool IsReady();
+	public bool IsReady { get; }
 
 	/// <summary>
 	/// Gets the name of the current node.
 	/// </summary>
 	/// <returns>A <see cref="string"/> representing the name of the node.</returns>
-	public string GetName();
+	public string NodeName { get; }
 }

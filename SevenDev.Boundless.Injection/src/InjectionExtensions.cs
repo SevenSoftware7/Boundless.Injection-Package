@@ -15,12 +15,12 @@ public static class InjectionExtensions {
 	/// <param name="injector">The Node which will propagate the value to its children</param>
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	public static void PropagateInjection<T>(this IInjector<T> injector, Logger? logger = null) where T : notnull {
-		IInjectionNode node = injector.GetNode();
-		if (!node.IsReady()) return;
+		IInjectionNode node = injector.InjectionNode;
+		if (!node.IsReady) return;
 
 		T? value = injector.GetInjectValue();
 
-		logger?.Invoke($"Injection || Propagating {value} (type {typeof(T).Name}) to {node.GetName()} children");
+		logger?.Invoke($"Injection || Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children");
 
 		node.PropagateInjection(injector.GetInjectValue());
 	}
@@ -32,7 +32,7 @@ public static class InjectionExtensions {
 	/// <param name="parent">The parent Node whose children will receive the value through propagation</param>
 	/// <param name="value">The value which will be propagated to the child Nodes</param>
 	public static void PropagateInjection<T>(this IInjectionNode parent, T? value) where T : notnull {
-		if (!parent.IsReady()) return;
+		if (!parent.IsReady) return;
 
 		PropagateInjection(parent, value, true);
 	}
@@ -50,12 +50,12 @@ public static class InjectionExtensions {
 	/// </remark>
 	/// </param>
 	private static void PropagateInjection<T>(IInjectionNode parent, T? value, bool skipParent) where T : notnull {
-		object? parentObject = parent.GetObject();
+		object? parentObject = parent.UnderlyingObject;
 		IInjectionInterceptor<T>? interceptorParent = parentObject as IInjectionInterceptor<T>;
 		IInjectionBlocker<T>? blockerParent = parentObject as IInjectionBlocker<T>;
 
 		List<(IInjectionNode child, T? childValue)> injections = [];
-		foreach (IInjectionNode child in parent.GetChildren()) {
+		foreach (IInjectionNode child in parent.Children) {
 			if (!skipParent && blockerParent is not null && blockerParent.ShouldBlock(child, value)) continue;
 
 			T? childValue = interceptorParent is not null ? interceptorParent.Intercept(child, value) : value;
@@ -82,12 +82,12 @@ public static class InjectionExtensions {
 	/// In the case that the <paramref name="requester"/> Node is not ready (see <see cref="IInjectionNode.IsReady"/>), the injection will not request the propagation and will return true.
 	/// </remark>
 	public static bool RequestInjection<T>(this IInjectable<T> requester, Logger? logger = null) where T : notnull {
-		IInjectionNode node = requester.GetNode();
-		IInjectionNode? parent = node.GetParent();
+		IInjectionNode node = requester.InjectionNode;
+		IInjectionNode? parent = node.Parent;
 		if (parent is null) return false;
-		if (!parent.IsReady()) return true; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
+		if (!parent.IsReady) return true; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
 
-		logger?.Invoke($"Injection || Requesting Injection of {typeof(T).Name} for {node.GetName()}");
+		logger?.Invoke($"Injection || Requesting Injection of {typeof(T).Name} for {node.NodeName}");
 
 		return parent.RequestInjection<T>(logger);
 	}
@@ -100,12 +100,12 @@ public static class InjectionExtensions {
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
 	public static bool RequestInjection<T>(this IInjectionNode requester, Logger? logger = null) where T : notnull {
-		if (requester.GetObject() is not IInjector<T> provider) {
-			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {requester.GetName()}");
-			return requester.GetParent()?.RequestInjection<T>(logger) ?? false;
+		if (requester.UnderlyingObject is not IInjector<T> provider) {
+			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {requester.NodeName}");
+			return requester.Parent?.RequestInjection<T>(logger) ?? false;
 		}
 
-		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {requester.GetName()}");
+		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {requester.NodeName}");
 
 		PropagateInjection(requester, provider.GetInjectValue(), true);
 		return true;
