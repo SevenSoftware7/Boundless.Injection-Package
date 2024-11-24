@@ -23,7 +23,7 @@ public interface IInjectable {
 /// Allows a Node to receive dependency-injected values via 'injection propagation'
 /// </summary>
 /// <typeparam name="T">The type of values which will be injected to the node</typeparam>
-public interface IInjectable<in T> : IInjectable where T : notnull {
+public interface IInjectable<in T> : IInjectable, IInjectionNodeProvider where T : notnull {
 	/// <summary>
 	/// Method that is called whenever a <paramref name="value"/> of type T is injected to this node.
 	/// </summary>

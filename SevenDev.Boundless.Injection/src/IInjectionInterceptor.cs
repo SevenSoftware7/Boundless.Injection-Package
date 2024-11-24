@@ -1,7 +1,5 @@
 namespace SevenDev.Boundless.Injection;
 
-using Godot;
-
 /// <summary>
 /// Allows a Node to intercept an IInjector injection propagation and modify the propagated value for each child individually.
 /// </summary>
@@ -14,5 +12,5 @@ public interface IInjectionInterceptor<T> where T : notnull {
 	/// <param name="child">The child which will receive and propagate the returned value</param>
 	/// <param name="value">The value which was being propagated before the interception</param>
 	/// <returns>The value which will be received by the given <paramref name="child"/></returns>
-	T? Intercept(Node child, T? value);
+	T? Intercept(IInjectionNode child, T? value);
 }

@@ -66,7 +66,8 @@ namespace SevenDev.Boundless.Injection.Generators {
 					if (!injectorMemberData.HasResult || injectorMemberData.Result.Count() == 0) continue;
 
 
-					spc.AddSource($"{classSymbol}_Injector.generated.cs", GenerateCode(classSymbol, injectorMemberData.Result).ToString());
+					string fileName = Utility.GetFileLegalTypeString(classDeclaration, semanticModel);
+					spc.AddSource($"{fileName}_Injector.generated.cs", GenerateCode(classSymbol, injectorMemberData.Result).ToString());
 				}
 			});
 		}
@@ -83,7 +84,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 			codeBuilder.AppendLine();
 			codeBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace}");
 			codeBuilder.AppendLine("{");
-			codeBuilder.AppendLine($"    public partial class {classSymbol.Name} : {implementedInterfacesString}");
+			codeBuilder.AppendLine($"    {Utility.GetSymbolAccessibility(classSymbol)} partial {classSymbol.ToDisplayString(NullableFlowState.NotNull, Utility.ClassDeclarationNameFormat)} : {implementedInterfacesString}");
 			codeBuilder.AppendLine("    {");
 
 			foreach (var item in typeInjectors) {

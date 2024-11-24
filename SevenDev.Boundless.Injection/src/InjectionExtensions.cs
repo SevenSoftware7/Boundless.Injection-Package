@@ -1,6 +1,8 @@
 namespace SevenDev.Boundless.Injection;
 
-using Godot;
+using System.Collections.Generic;
+
+using Logger = System.Action<string>;
 
 /// <summary>
 /// Utility methods for Injection Propagation
@@ -11,10 +13,16 @@ public static class InjectionExtensions {
 	/// </summary>
 	/// <typeparam name="T">The type of value which will be propagated</typeparam>
 	/// <param name="injector">The Node which will propagate the value to its children</param>
-	public static void PropagateInjection<T>(this IInjector<T> injector) where T : notnull {
-		if (injector is not Node injectorParent) return;
+	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
+	public static void PropagateInjection<T>(this IInjector<T> injector, Logger? logger = null) where T : notnull {
+		IInjectionNode node = injector.InjectionNode;
+		if (!node.IsReady) return;
 
-		injectorParent.PropagateInjection(injector.GetInjectValue());
+		T? value = injector.GetInjectValue();
+
+		logger?.Invoke($"Injection || Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children");
+
+		node.PropagateInjection(injector.GetInjectValue());
 	}
 
 	/// <summary>
@@ -23,9 +31,8 @@ public static class InjectionExtensions {
 	/// <typeparam name="T">The type of value which will be propagated</typeparam>
 	/// <param name="parent">The parent Node whose children will receive the value through propagation</param>
 	/// <param name="value">The value which will be propagated to the child Nodes</param>
-	public static void PropagateInjection<T>(this Node parent, T? value) where T : notnull {
-		if (!parent.IsNodeReady()) return;
-		GD.Print($"Propagating {value} (type {typeof(T).Name}) to {parent.Name} children");
+	public static void PropagateInjection<T>(this IInjectionNode parent, T? value) where T : notnull {
+		if (!parent.IsReady) return;
 
 		PropagateInjection(parent, value, true);
 	}
@@ -42,18 +49,24 @@ public static class InjectionExtensions {
 	/// This is mostly used to prevent injections from stopping immediately or looping infinitely.
 	/// </remark>
 	/// </param>
-	private static void PropagateInjection<T>(Node parent, T? value, bool skipParent) where T : notnull {
-		if (!skipParent && parent is IInjectable<T> injectableParent) {
-			injectableParent.Inject(value);
-		}
+	private static void PropagateInjection<T>(IInjectionNode parent, T? value, bool skipParent) where T : notnull {
+		object? parentObject = parent.UnderlyingObject;
+		IInjectionInterceptor<T>? interceptorParent = parentObject as IInjectionInterceptor<T>;
+		IInjectionBlocker<T>? blockerParent = parentObject as IInjectionBlocker<T>;
 
-		IInjectionInterceptor<T>? interceptorParent = parent as IInjectionInterceptor<T>;
-		IInjectionBlocker<T>? blockerParent = parent as IInjectionBlocker<T>;
-
-		foreach (Node child in parent.GetChildren()) {
+		List<(IInjectionNode child, T? childValue)> injections = [];
+		foreach (IInjectionNode child in parent.Children) {
 			if (!skipParent && blockerParent is not null && blockerParent.ShouldBlock(child, value)) continue;
 
 			T? childValue = interceptorParent is not null ? interceptorParent.Intercept(child, value) : value;
+			injections.Add((child, childValue));
+		}
+
+		if (!skipParent && parentObject is IInjectable<T> injectableParent) {
+			injectableParent.Inject(value);
+		}
+
+		foreach ((IInjectionNode child, T? childValue) in injections) {
 			PropagateInjection(child, childValue, false);
 		}
 	}
@@ -63,17 +76,20 @@ public static class InjectionExtensions {
 	/// </summary>
 	/// <typeparam name="T">The type of value which needs to be injected</typeparam>
 	/// <param name="requester">The Node which requested an Injection propagation</param>
+	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
 	/// <remark>
-	/// In the case that the <paramref name="requester"/> Node is not ready (see <see cref="Node.IsNodeReady"/>), the injection will not request the propagation and will return true.
+	/// In the case that the <paramref name="requester"/> Node is not ready (see <see cref="IInjectionNode.IsReady"/>), the injection will not request the propagation and will return true.
 	/// </remark>
-	public static bool RequestInjection<T>(this IInjectable<T> requester) where T : notnull {
-		if (requester is not Node requesterNode || requesterNode.GetParent() is not Node requesterParent) return false;
-		if (!requesterParent.IsNodeReady()) return true; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
+	public static bool RequestInjection<T>(this IInjectable<T> requester, Logger? logger = null) where T : notnull {
+		IInjectionNode node = requester.InjectionNode;
+		IInjectionNode? parent = node.Parent;
+		if (parent is null) return false;
+		if (!parent.IsReady) return true; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
 
-		GD.Print($"Requesting Injection of {typeof(T).Name} for {requesterNode.Name}");
+		logger?.Invoke($"Injection || Requesting Injection of {typeof(T).Name} for {node.NodeName}");
 
-		return requesterParent.RequestInjection<T>();
+		return parent.RequestInjection<T>(logger);
 	}
 
 	/// <summary>
@@ -81,11 +97,15 @@ public static class InjectionExtensions {
 	/// </summary>
 	/// <typeparam name="T">The type of value which needs to be injected</typeparam>
 	/// <param name="requester">The Node (or one of its ancesters) which requested an Injection propagation</param>
+	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
-	private static bool RequestInjection<T>(this Node requester) where T : notnull {
-		if (requester is not IInjector<T> provider) {
-			return requester.GetParent()?.RequestInjection<T>() ?? false;
+	public static bool RequestInjection<T>(this IInjectionNode requester, Logger? logger = null) where T : notnull {
+		if (requester.UnderlyingObject is not IInjector<T> provider) {
+			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {requester.NodeName}");
+			return requester.Parent?.RequestInjection<T>(logger) ?? false;
 		}
+
+		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {requester.NodeName}");
 
 		PropagateInjection(requester, provider.GetInjectValue(), true);
 		return true;
