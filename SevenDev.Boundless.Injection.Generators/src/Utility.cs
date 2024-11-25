@@ -1,10 +1,15 @@
 
 
+using System;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SevenDev.Boundless.Injection.Generators {
 	public static class Utility {
+		public static readonly string InjectableAttributeTypeName = "InjectableAttribute";
+		public static readonly string InjectableAttributeTypeFullName = "SevenDev.Boundless.Injection.InjectableAttribute";
+		public static readonly string InjectorAttributeTypeName = "InjectorAttribute";
+		public static readonly string InjectorAttributeTypeFullName = "SevenDev.Boundless.Injection.InjectorAttribute";
 
 		public static readonly SymbolDisplayFormat ClassDeclarationNameFormat = new SymbolDisplayFormat(
 			SymbolDisplayGlobalNamespaceStyle.Omitted,

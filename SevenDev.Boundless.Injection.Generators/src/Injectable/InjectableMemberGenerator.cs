@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 
 		public void Initialize(IncrementalGeneratorInitializationContext initializationContext) {
-			// Create a syntax provider to find class declarations with members having InjectableAttribute
+			// Create a syntax provider to find class declarations with members having CanBeInjectedAttribute
 			var classDeclarationsWithAttributes = initializationContext.SyntaxProvider.CreateSyntaxProvider(
 				predicate: (node, cancellationToken) => {
 					return node is ClassDeclarationSyntax classDeclaration
@@ -26,7 +27,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 					SemanticModel semanticModel = context.SemanticModel;
 
 					(MemberDeclarationSyntax member, AttributeSyntax attribute)[] membersWithAttribute = classDeclaration.Members
-						.Select(member => (member, attribute: member.AttributeLists.SelectOfType(InjectableAttribute.CachedType, semanticModel, cancellationToken)))
+						.Select(member => (member, attribute: member.AttributeLists.SelectOfTypeName(Utility.InjectableAttributeTypeFullName, semanticModel, cancellationToken)))
 						.Where(tuple => tuple.attribute != default)
 						.ToArray();
 

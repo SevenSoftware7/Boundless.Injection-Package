@@ -29,10 +29,10 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 				int priority = 0;
 
-				if (attributeSymbolInfo.Symbol?.ContainingType?.Name == InjectableAttribute.CachedType.Name) {
+				if (attributeSymbolInfo.Symbol?.ContainingType?.Name == Utility.InjectableAttributeTypeName) {
 					ISymbol memberSymbol = semanticModel.GetDeclaredSymbol(memberSyntax);
 					AttributeData attributeData = memberSymbol?.GetAttributes()
-						.FirstOrDefault(a => a.AttributeClass?.Name == InjectableAttribute.CachedType.Name);
+						.FirstOrDefault(a => a.AttributeClass?.Name == Utility.InjectableAttributeTypeName);
 
 					priority = attributeData?.ConstructorArguments.FirstOrDefault().Value is int p ? p : 0;
 				}

@@ -15,6 +15,14 @@ namespace SevenDev.Boundless.Injection.Generators {
 					&& attributeSymbol.ToDisplayString() == type.FullName
 				);
 
+		public static AttributeSyntax SelectOfTypeName(this SyntaxList<AttributeListSyntax> attributesLists, string typeName, SemanticModel semanticModel, CancellationToken cancellationToken = default) =>
+			attributesLists
+				.SelectMany(attrList => attrList.Attributes)
+				.FirstOrDefault(attribute =>
+					semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol?.ContainingSymbol is INamedTypeSymbol attributeSymbol
+					&& attributeSymbol.ToDisplayString() == typeName
+				);
+
 		public static AttributeSyntax SelectOfType<T>(this SyntaxList<AttributeListSyntax> attributesLists, SemanticModel semanticModel, CancellationToken cancellationToken = default) =>
 			attributesLists.SelectOfType(typeof(T), semanticModel, cancellationToken);
 	}
