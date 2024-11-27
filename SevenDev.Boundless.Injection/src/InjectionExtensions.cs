@@ -49,7 +49,7 @@ public static class InjectionExtensions {
 	/// This is mostly used to prevent injections from stopping immediately or looping infinitely.
 	/// </remark>
 	/// </param>
-	private static void PropagateInjection<T>(IInjectionNode parent, T? value, bool skipParent) where T : notnull {
+	private static void PropagateInjection<T>(in IInjectionNode parent, T? value, bool skipParent) where T : notnull {
 		object? parentObject = parent.UnderlyingObject;
 		IInjectionInterceptor<T>? interceptorParent = parentObject as IInjectionInterceptor<T>;
 		IInjectionBlocker<T>? blockerParent = parentObject as IInjectionBlocker<T>;
@@ -89,7 +89,7 @@ public static class InjectionExtensions {
 
 		logger?.Invoke($"Injection || Requesting Injection of {typeof(T).Name} for {node.NodeName}");
 
-		return parent.RequestInjection<T>(logger);
+		return RequestInjection<T>(parent, logger);
 	}
 
 	/// <summary>
@@ -99,10 +99,12 @@ public static class InjectionExtensions {
 	/// <param name="requester">The Node (or one of its ancesters) which requested an Injection propagation</param>
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
-	public static bool RequestInjection<T>(this IInjectionNode requester, Logger? logger = null) where T : notnull {
+	private static bool RequestInjection<T>(in IInjectionNode requester, Logger? logger = null) where T : notnull {
 		if (requester.UnderlyingObject is not IInjector<T> provider) {
 			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {requester.NodeName}");
-			return requester.Parent?.RequestInjection<T>(logger) ?? false;
+
+			if (requester.Parent is null) return false;
+			return RequestInjection<T>(requester.Parent, logger);
 		}
 
 		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {requester.NodeName}");
