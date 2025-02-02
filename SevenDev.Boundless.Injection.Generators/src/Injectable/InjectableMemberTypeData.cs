@@ -60,7 +60,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 					return methodDeclaration.ParameterList.Parameters[0].Type;
 				case PropertyDeclarationSyntax propertyDeclaration:
-					bool hasSetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration)) ?? false;
+					bool hasSetter = propertyDeclaration.AccessorList?.Accessors.Any(SyntaxKind.SetAccessorDeclaration) ?? false;
 
 					if (!hasSetter) {
 						return Diagnostic.Create(DiagnosticDescriptors.SetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), propertyDeclaration.Identifier.Text);
@@ -68,7 +68,7 @@ namespace SevenDev.Boundless.Injection.Generators {
 
 					return propertyDeclaration.Type;
 				case FieldDeclarationSyntax fieldDeclaration:
-					bool isReadonly = fieldDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
+					bool isReadonly = fieldDeclaration.Modifiers.Any(SyntaxKind.ReadOnlyKeyword);
 
 					if (isReadonly) {
 						VariableDeclaratorSyntax fieldDeclarator = fieldDeclaration.Declaration.Variables[0];

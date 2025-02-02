@@ -63,7 +63,9 @@ namespace SevenDev.Boundless.Injection.Generators {
 					}
 					return methodDeclaration.ReturnType;
 				case PropertyDeclarationSyntax propertyDeclaration:
-					bool hasGetter = propertyDeclaration.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.GetAccessorDeclaration)) ?? false;
+					bool hasGetter =
+						propertyDeclaration.AccessorList?.Accessors.Any(SyntaxKind.GetAccessorDeclaration) ?? false ||
+						propertyDeclaration.ExpressionBody is ArrowExpressionClauseSyntax;
 
 					if (!hasGetter) {
 						return Diagnostic.Create(DiagnosticDescriptors.GetterlessPropertyDescriptor, propertyDeclaration.Identifier.GetLocation(), propertyDeclaration.Identifier.Text);
