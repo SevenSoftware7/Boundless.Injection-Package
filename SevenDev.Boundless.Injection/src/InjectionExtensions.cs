@@ -54,8 +54,10 @@ public static class InjectionExtensions {
 		IInjectionInterceptor<T>? interceptorParent = parentObject as IInjectionInterceptor<T>;
 		IInjectionBlocker<T>? blockerParent = parentObject as IInjectionBlocker<T>;
 
-		List<(IInjectionNode child, T? childValue)> injections = [];
-		foreach (IInjectionNode child in parent.Children) {
+		IEnumerable<IInjectionNode> children = parent.Children;
+
+		List<(IInjectionNode child, T? childValue)> injections = new(children.Count());
+		foreach (IInjectionNode child in children) {
 			if (!skipParent && blockerParent is not null && blockerParent.ShouldBlock(child, value)) continue;
 
 			T? childValue = interceptorParent is not null ? interceptorParent.Intercept(child, value) : value;
