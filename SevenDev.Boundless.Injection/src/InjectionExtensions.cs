@@ -110,8 +110,8 @@ public static class InjectionExtensions {
 		else {
 			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {node.NodeName}");
 
-			if (node.Parent is null) return false;
-			return RequestInjection<T>(node.Parent, acceptNodeAsInjection, logger);
+			if (node.Parent is not IInjectionNode parentNode) return false;
+			return RequestInjection<T>(parentNode, acceptNodeAsInjection, logger);
 		}
 
 		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {node.NodeName}");
