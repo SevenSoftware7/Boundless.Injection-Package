@@ -1,7 +1,7 @@
 namespace SevenDev.Boundless.Injection;
 
 using System.Collections.Generic;
-
+using System.Linq;
 using Logger = System.Action<string>;
 
 /// <summary>
@@ -26,7 +26,7 @@ public static class InjectionExtensions {
 	}
 
 	/// <summary>
-	/// Propagates a given <paramref name="value"/> to all child Nodes of a <paramref name="parent"/> Node.
+	/// Propagates a given <paramref name="value"/> recursively to all child Nodes of a <paramref name="parent"/> Node.
 	/// </summary>
 	/// <typeparam name="T">The type of value which will be propagated</typeparam>
 	/// <param name="parent">The parent Node whose children will receive the value through propagation</param>
@@ -78,12 +78,13 @@ public static class InjectionExtensions {
 	/// </summary>
 	/// <typeparam name="T">The type of value which needs to be injected</typeparam>
 	/// <param name="requester">The Node which requested an Injection propagation</param>
+	/// <param name="acceptNodeAsInjection">Whether an ascendant Node of <paramref name="requester"/> can be accepted as an Injection provider if an <see cref="IInjector{T}"/> cannot be found for it</param>
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
 	/// <remark>
 	/// In the case that the <paramref name="requester"/> Node is not ready (see <see cref="IInjectionNode.IsReady"/>), the injection will not request the propagation and will return true.
 	/// </remark>
-	public static bool RequestInjection<T>(this IInjectable<T> requester, Logger? logger = null) where T : notnull {
+	public static bool RequestInjection<T>(this IInjectable<T> requester, bool acceptNodeAsInjection = false, Logger? logger = null) where T : notnull {
 		IInjectionNode node = requester.InjectionNode;
 		IInjectionNode? parent = node.Parent;
 		if (parent is null) return false;
@@ -91,27 +92,31 @@ public static class InjectionExtensions {
 
 		logger?.Invoke($"Injection || Requesting Injection of {typeof(T).Name} for {node.NodeName}");
 
-		return RequestInjection<T>(parent, logger);
+		return RequestInjection<T>(parent, acceptNodeAsInjection, logger);
 	}
 
 	/// <summary>
-	/// Used to request an Injection propagation of a type of value which a <paramref name="requester"/> Node depends on
+	/// Used to request an Injection propagation of a type of value which a <paramref name="node"/> Node depends on
 	/// </summary>
 	/// <typeparam name="T">The type of value which needs to be injected</typeparam>
-	/// <param name="requester">The Node (or one of its ancesters) which requested an Injection propagation</param>
+	/// <param name="node">The Node (or one of its ancesters) which requested an Injection propagation</param>
+	/// <param name="acceptNodeAsInjection">Whether an ascendant Node of <paramref name="node"/> can be accepted as an Injection provider if an <see cref="IInjector{T}"/> cannot be found for it</param>
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
-	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
-	private static bool RequestInjection<T>(in IInjectionNode requester, Logger? logger = null) where T : notnull {
-		if (requester.UnderlyingObject is not IInjector<T> provider) {
-			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {requester.NodeName}");
+	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="node"/> Node</returns>
+	private static bool RequestInjection<T>(in IInjectionNode node, bool acceptNodeAsInjection = false, Logger? logger = null) where T : notnull {
+		T? value = default;
+		if (node.UnderlyingObject is IInjector<T> provider) value = provider.GetInjectValue();
+		else if (acceptNodeAsInjection && node.UnderlyingObject is T nodeT) value = nodeT;
+		else {
+			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {node.NodeName}");
 
-			if (requester.Parent is null) return false;
-			return RequestInjection<T>(requester.Parent, logger);
+			if (node.Parent is null) return false;
+			return RequestInjection<T>(node.Parent, acceptNodeAsInjection, logger);
 		}
 
-		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {requester.NodeName}");
+		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {node.NodeName}");
 
-		PropagateInjection(requester, provider.GetInjectValue(), true);
+		PropagateInjection(node, value, true);
 		return true;
 	}
 }
