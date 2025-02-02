@@ -8,5 +8,5 @@ public interface IInjectionNodeProvider {
 	/// Retrieves an injection node.
 	/// </summary>
 	/// <returns>An instance of <see cref="IInjectionNode"/> if available; otherwise, <c>null</c>.</returns>
-	IInjectionNode InjectionNode { get; }
+	public IInjectionNode InjectionNode { get; }
 }

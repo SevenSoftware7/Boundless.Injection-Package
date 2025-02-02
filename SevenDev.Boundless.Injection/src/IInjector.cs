@@ -9,5 +9,5 @@ public interface IInjector<out T> : IInjectionNodeProvider where T : notnull {
 	/// Gets the value which will be injected.
 	/// </summary>
 	/// <returns>The injection value</returns>
-	T? GetInjectValue();
+	public T? GetInjectValue();
 }
