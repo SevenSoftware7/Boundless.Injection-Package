@@ -16,7 +16,6 @@ public static class InjectionExtensions {
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	public static void PropagateInjection<T>(this IInjector<T> injector, Logger? logger = null) where T : notnull {
 		IInjectionNode node = injector.InjectionNode;
-		if (!node.IsReady) return;
 
 		T? value = injector.GetInjectValue();
 
@@ -31,11 +30,8 @@ public static class InjectionExtensions {
 	/// <typeparam name="T">The type of value which will be propagated</typeparam>
 	/// <param name="parent">The parent Node whose children will receive the value through propagation</param>
 	/// <param name="value">The value which will be propagated to the child Nodes</param>
-	public static void PropagateInjection<T>(this IInjectionNode parent, T? value) where T : notnull {
-		if (!parent.IsReady) return;
-
+	public static void PropagateInjection<T>(this IInjectionNode parent, T? value) where T : notnull =>
 		PropagateInjection(parent, value, true);
-	}
 
 	/// <summary>
 	/// Propagates a given <paramref name="value"/> to all child Nodes of a <paramref name="parent"/> Node.
