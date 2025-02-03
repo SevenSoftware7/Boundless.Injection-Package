@@ -19,7 +19,7 @@ public static class InjectionExtensions {
 
 		T? value = injector.GetInjectValue();
 
-		logger?.Invoke($"Injection || Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children");
+		logger?.Invoke($"[Boundless.Injection] : Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children");
 
 		node.PropagateInjection(injector.GetInjectValue());
 	}
@@ -84,9 +84,9 @@ public static class InjectionExtensions {
 		IInjectionNode node = requester.InjectionNode;
 		IInjectionNode? parent = node.Parent;
 		if (parent is null) return false;
-		if (!parent.IsReady) return true; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
+		if (!parent.IsReady) return false; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
 
-		logger?.Invoke($"Injection || Requesting Injection of {typeof(T).Name} for {node.NodeName}");
+		logger?.Invoke($"[Boundless.Injection] : Requesting Injection of {typeof(T).Name} for {node.NodeName}");
 
 		return RequestInjection<T>(parent, acceptNodeAsInjection, logger);
 	}
@@ -104,13 +104,13 @@ public static class InjectionExtensions {
 		if (node.UnderlyingObject is IInjector<T> provider) value = provider.GetInjectValue();
 		else if (acceptNodeAsInjection && node.UnderlyingObject is T nodeT) value = nodeT;
 		else {
-			logger?.Invoke($"Injection || Requesting {typeof(T).Name} Injection at {node.NodeName}");
+			logger?.Invoke($"[Boundless.Injection] : Requesting {typeof(T).Name} Injection at {node.NodeName}");
 
 			if (node.Parent is not IInjectionNode parentNode) return false;
 			return RequestInjection<T>(parentNode, acceptNodeAsInjection, logger);
 		}
 
-		logger?.Invoke($"Injection || Found {typeof(T).Name} Injector: {node.NodeName}");
+		logger?.Invoke($"[Boundless.Injection] : Found {typeof(T).Name} Injector: {node.NodeName}");
 
 		PropagateInjection(node, value, true);
 		return true;
