@@ -33,5 +33,5 @@ public interface IInjectionNode {
 	/// Gets the name of the current node.
 	/// </summary>
 	/// <returns>A <see cref="string"/> representing the name of the node.</returns>
-	public string NodeName { get; }
+	public string? NodeName { get; }
 }

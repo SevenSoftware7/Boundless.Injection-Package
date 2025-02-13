@@ -8,6 +8,9 @@ using Logger = System.Action<string>;
 /// Utility methods for Injection Propagation
 /// </summary>
 public static class InjectionExtensions {
+	private static void Log(this Logger logger, string message) =>
+		logger.Invoke($"[Boundless.Injection] : {message}");
+
 	/// <summary>
 	/// Propagates the value of an <paramref name="injector"/> to all child Nodes of the same parent Node.
 	/// </summary>
@@ -19,7 +22,10 @@ public static class InjectionExtensions {
 
 		T? value = injector.GetInjectValue();
 
-		logger?.Invoke($"[Boundless.Injection] : Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children");
+		logger?.Log(node.NodeName is null
+			? $"Propagating {value} (type {typeof(T).Name}) to Node children"
+			: $"Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children"
+		);
 
 		node.PropagateInjection(injector.GetInjectValue());
 	}
@@ -86,7 +92,10 @@ public static class InjectionExtensions {
 		if (parent is null) return false;
 		if (!parent.IsReady) return false; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
 
-		logger?.Invoke($"[Boundless.Injection] : Requesting Injection of {typeof(T).Name} for {node.NodeName}");
+		logger?.Log(node.NodeName is null
+			? $"Requesting Injection of {typeof(T).Name}"
+			: $"Requesting Injection of {typeof(T).Name} for {node.NodeName}"
+		);
 
 		return RequestInjection<T>(parent, acceptNodeAsInjection, logger);
 	}
@@ -104,13 +113,19 @@ public static class InjectionExtensions {
 		if (node.UnderlyingObject is IInjector<T> provider) value = provider.GetInjectValue();
 		else if (acceptNodeAsInjection && node.UnderlyingObject is T nodeT) value = nodeT;
 		else {
-			logger?.Invoke($"[Boundless.Injection] : Requesting {typeof(T).Name} Injection at {node.NodeName}");
+			logger?.Log(node.NodeName is null
+				? $"Requesting {typeof(T).Name} Injection"
+				: $"Requesting {typeof(T).Name} Injection at {node.NodeName}"
+			);
 
 			if (node.Parent is not IInjectionNode parentNode) return false;
 			return RequestInjection<T>(parentNode, acceptNodeAsInjection, logger);
 		}
 
-		logger?.Invoke($"[Boundless.Injection] : Found {typeof(T).Name} Injector: {node.NodeName}");
+		logger?.Log(node.NodeName is null
+			? $"Found {typeof(T).Name} Injector"
+			: $"Found {typeof(T).Name} Injector at {node.NodeName}"
+		);
 
 		PropagateInjection(node, value, true);
 		return true;
