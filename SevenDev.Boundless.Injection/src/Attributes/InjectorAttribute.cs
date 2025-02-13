@@ -8,5 +8,8 @@ using System;
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
 public class InjectorAttribute : Attribute {
+	/// <summary>
+	/// Initializes a new instance of the <see cref="InjectorAttribute"/> class.
+	/// </summary>
 	public InjectorAttribute() { }
 }
