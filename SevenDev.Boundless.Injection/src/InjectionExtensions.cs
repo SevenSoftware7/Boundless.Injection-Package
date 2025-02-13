@@ -27,7 +27,7 @@ public static class InjectionExtensions {
 			: $"Propagating {value} (type {typeof(T).Name}) to {node.NodeName} children"
 		);
 
-		node.PropagateInjection(injector.GetInjectValue());
+		node.PropagateInjection(value);
 	}
 
 	/// <summary>
