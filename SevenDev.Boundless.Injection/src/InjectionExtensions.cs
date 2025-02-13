@@ -31,13 +31,13 @@ public static class InjectionExtensions {
 	}
 
 	/// <summary>
-	/// Propagates a given <paramref name="value"/> recursively to all child Nodes of a <paramref name="parent"/> Node.
+	/// Propagates a given <paramref name="value"/> recursively to all child Nodes of a <paramref name="root"/> Node.
 	/// </summary>
 	/// <typeparam name="T">The type of value which will be propagated</typeparam>
-	/// <param name="parent">The parent Node whose children will receive the value through propagation</param>
+	/// <param name="root">The root Node whose children will receive the value through propagation</param>
 	/// <param name="value">The value which will be propagated to the child Nodes</param>
-	public static void PropagateInjection<T>(this IInjectionNode parent, T? value) where T : notnull =>
-		PropagateInjection(parent, value, true);
+	public static void PropagateInjection<T>(this IInjectionNode root, T? value) where T : notnull =>
+		PropagateInjection(root, value, true);
 
 	/// <summary>
 	/// Propagates a given <paramref name="value"/> to all child Nodes of a <paramref name="parent"/> Node.
