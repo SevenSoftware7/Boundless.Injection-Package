@@ -84,13 +84,13 @@ public static class InjectionExtensions {
 	/// <param name="logger">A logger which will be called with a message whenever a value is propagated</param>
 	/// <returns>Whether a fitting <see cref="IInjector{T}"/> was found and a value was injected to the original <paramref name="requester"/> Node</returns>
 	/// <remark>
-	/// In the case that the <paramref name="requester"/> Node is not ready (see <see cref="IInjectionNode.IsReady"/>), the injection will not request the propagation and will return true.
+	/// In the case that the <paramref name="requester"/> Node is not ready (see <see cref="IInjectionNode.IsTreeReady"/>), the injection will not request the propagation and will return true.
 	/// </remark>
 	public static bool RequestInjection<T>(this IInjectable<T> requester, bool acceptNodeAsInjection = false, Logger? logger = null) where T : notnull {
 		IInjectionNode node = requester.InjectionNode;
+		if (!node.IsTreeReady) return false; // Don't request Injection if the injection tree is not ready, the injectors will inject when they are ready
 		IInjectionNode? parent = node.Parent;
 		if (parent is null) return false;
-		if (!parent.IsReady) return false; // Don't request Injection if the parents are not ready, they will inject when they are (if they can)
 
 		logger?.Log(node.NodeName is null
 			? $"Requesting Injection of {typeof(T).Name}"

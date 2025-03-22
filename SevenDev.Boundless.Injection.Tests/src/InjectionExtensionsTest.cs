@@ -7,8 +7,9 @@ public class InjectionExtensionsTest {
 	[Fact]
 	public void PropagateInjection_ShouldLogPropagation() {
 		// Arrange
-		Mock<IInjector<string>> mockInjector = new();
 		Mock<IInjectionNode> mockNode = new();
+		Mock<IInjector<string>> mockInjector = new();
+
 		Mock<Action<string>> mockLogger = new();
 
 		mockInjector.Setup(i => i.InjectionNode).Returns(mockNode.Object);
@@ -134,12 +135,12 @@ public class InjectionExtensionsTest {
 		Mock<IInjectable<string>> mockRequester = new();
 
 		Mock<IInjectionNode> mockParentNode = new();
+
 		Mock<Action<string>> mockLogger = new();
 
-		mockRequester.Setup(r => r.InjectionNode).Returns(mockNode.Object);
 		mockNode.Setup(n => n.Parent).Returns(mockParentNode.Object);
-
-		mockParentNode.Setup(n => n.IsReady).Returns(true);
+		mockNode.Setup(n => n.IsTreeReady).Returns(true);
+		mockRequester.Setup(r => r.InjectionNode).Returns(mockNode.Object);
 
 		// Act
 		mockRequester.Object.RequestInjection(logger: mockLogger.Object);
@@ -151,8 +152,8 @@ public class InjectionExtensionsTest {
 	[Fact]
 	public void RequestInjection_ShouldReturnFalseIfNoParent() {
 		// Arrange
-		Mock<IInjectable<string>> mockRequester = new();
 		Mock<IInjectionNode> mockNode = new();
+		Mock<IInjectable<string>> mockRequester = new();
 
 		mockNode.Setup(n => n.Parent).Returns((IInjectionNode)null);
 		mockRequester.Setup(r => r.InjectionNode).Returns(mockNode.Object);
@@ -174,9 +175,8 @@ public class InjectionExtensionsTest {
 		Mock<IInjectionNode> mockParentNode = new();
 
 		mockNode.Setup(n => n.Parent).Returns(mockParentNode.Object);
+		mockNode.Setup(n => n.IsTreeReady).Returns(false);
 		mockRequester.Setup(r => r.InjectionNode).Returns(mockNode.Object);
-
-		mockParentNode.Setup(n => n.IsReady).Returns(false);
 
 		// Act
 		bool result = mockRequester.Object.RequestInjection<string>();
@@ -199,9 +199,9 @@ public class InjectionExtensionsTest {
 
 		mockChildNode.Setup(n => n.UnderlyingObject).Returns(mockInjectable.Object);
 		mockChildNode.Setup(n => n.Parent).Returns(mockRootNode.Object);
+		mockChildNode.Setup(n => n.IsTreeReady).Returns(true);
 		mockInjectable.Setup(i => i.InjectionNode).Returns(mockChildNode.Object);
 
-		mockRootNode.Setup(n => n.IsReady).Returns(true);
 		mockRootNode.Setup(n => n.UnderlyingObject).Returns(mockInjector.Object);
 		mockRootNode.Setup(n => n.Children).Returns([mockChildNode.Object]);
 		mockInjector.Setup(i => i.InjectionNode).Returns(mockRootNode.Object);
@@ -217,15 +217,17 @@ public class InjectionExtensionsTest {
 	[Fact]
 	public void RequestInjection_ShouldAcceptNodeAsInjection() {
 		// Arrange
-		Mock<IInjectable<string>> mockRequester = new();
 		Mock<IInjectionNode> mockNode = new();
+		Mock<IInjectable<string>> mockRequester = new();
+
 		Mock<IInjectionNode> mockParentNode = new();
+
 		Mock<Action<string>> mockLogger = new();
 
 		mockRequester.Setup(r => r.InjectionNode).Returns(mockNode.Object);
 		mockNode.Setup(n => n.Parent).Returns(mockParentNode.Object);
+		mockNode.Setup(n => n.IsTreeReady).Returns(true);
 		mockParentNode.Setup(n => n.UnderlyingObject).Returns("testValue");
-		mockParentNode.Setup(n => n.IsReady).Returns(true);
 
 		// Act
 		bool result = mockRequester.Object.RequestInjection(acceptNodeAsInjection: true, logger: mockLogger.Object);

@@ -24,10 +24,10 @@ public interface IInjectionNode {
 	public IEnumerable<IInjectionNode> Children { get; }
 
 	/// <summary>
-	/// Determines whether the current node is ready.
+	/// Determines whether the node's injection tree is ready to inject.
 	/// </summary>
-	/// <returns><c>true</c> if the node is ready; otherwise, <c>false</c>.</returns>
-	public bool IsReady { get; }
+	/// <returns><c>true</c> if the injection tree is ready; otherwise, <c>false</c>.</returns>
+	public bool IsTreeReady { get; }
 
 	/// <summary>
 	/// Gets the name of the current node.
