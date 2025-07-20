@@ -1,5 +1,6 @@
 namespace SevenDev.Boundless.Injection;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Logger = System.Action<string>;
@@ -8,8 +9,15 @@ using Logger = System.Action<string>;
 /// Utility methods for Injection Propagation
 /// </summary>
 public static class InjectionExtensions {
-	private static void Log(this Logger logger, string message) =>
-		logger.Invoke($"[Boundless.Injection] : {message}");
+	private static void Log(this Logger logger, ReadOnlySpan<char> message) {
+		const int prefixLength = 24;
+		Span<char> fullMessage = stackalloc char[prefixLength + message.Length];
+
+		"[Boundless.Injection] : ".AsSpan().CopyTo(fullMessage);
+		message.CopyTo(fullMessage[prefixLength..]);
+
+		logger.Invoke(fullMessage.ToString());
+	}
 
 	/// <summary>
 	/// Propagates the value of an <paramref name="injector"/> to all child Nodes of the same parent Node.
@@ -114,8 +122,8 @@ public static class InjectionExtensions {
 		else if (acceptNodeAsInjection && node.UnderlyingObject is T nodeT) value = nodeT;
 		else {
 			logger?.Log(node.NodeName is null
-				? $"Requesting {typeof(T).Name} Injection"
-				: $"Requesting {typeof(T).Name} Injection at {node.NodeName}"
+				? $"{typeof(T).Name} Injection Request propagating"
+				: $"{typeof(T).Name} Injection Request propagating through {node.NodeName}"
 			);
 
 			if (node.Parent is not IInjectionNode parentNode) return false;
