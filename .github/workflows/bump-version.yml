@@ -11,7 +11,7 @@ on:
 
 jobs:
   bump-project-version:
-    uses: AxelSevenS/publish-dotnet-packages-to-nuget/.github/workflows/bump-version.yml@master
+    uses: SevenSoftware7/publish-dotnet-packages-to-nuget/.github/workflows/bump-version.yml@master
     with:
       bump-type: ${{ github.event.inputs.bump-type }}
 
