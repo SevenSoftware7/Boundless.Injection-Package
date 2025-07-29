@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Seven.Boundless.Injection</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <CopyAllFiles>true</CopyAllFiles>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <DebugType>portable</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <Title>Seven.Boundless.Injection</Title>
+    <Version>1.1.10</Version>
+    <Description />
+    <Authors>Seven</Authors>
+
+    <PackageId>Seven.Boundless.Injection</PackageId>
+    <PackageReleaseNotes>Seven.Boundless.Injection release.</PackageReleaseNotes>
+    <!-- <PackageIcon>icon.png</PackageIcon> -->
+    <PackageTags />
+    <!-- <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile> -->
+    <PackageProjectUrl>https://github.com/AxelSevenS/Boundless.Injection-Package</PackageProjectUrl>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>git@github.com:AxelSevenS/Boundless.Injection-Package.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- <None Include="../README.md" Pack="true" PackagePath="\" />
+    <None Include="../LICENSE" Pack="true" PackagePath="\" />
+    <None Include="./icon.png" Pack="true" PackagePath="" /> -->
+  </ItemGroup>
+</Project>
