@@ -25,10 +25,10 @@
     <PackageTags />
     <!-- <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile> -->
-    <PackageProjectUrl>https://github.com/AxelSevenS/Boundless.Injection-Package</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/SevenSoftware7/Boundless.Injection-Package</PackageProjectUrl>
 
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>git@github.com:AxelSevenS/Boundless.Injection-Package.git</RepositoryUrl>
+    <RepositoryUrl>git@github.com:SevenSoftware7/Boundless.Injection-Package.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
