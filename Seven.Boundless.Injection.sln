@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seven.Boundless.Injection", "Seven.Boundless.Injection\Seven.Boundless.Injection.csproj", "{9D176618-9175-4F52-A840-8A007D076495}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seven.Boundless.Injection.Godot", "Seven.Boundless.Injection.Godot\Seven.Boundless.Injection.Godot.csproj", "{9F526286-DDCC-4E8D-AE2A-DEA9D0B16177}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seven.Boundless.Injection.Generators", "Seven.Boundless.Injection.Generators\Seven.Boundless.Injection.Generators.csproj", "{46048778-E0A0-4580-93E7-3785E11877B3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seven.Boundless.Injection.Tests", "Seven.Boundless.Injection.Tests\Seven.Boundless.Injection.Tests.csproj", "{F1D074F0-0C90-42AC-ACBB-5167B45FBB64}"
@@ -19,6 +21,10 @@ Global
 		{9D176618-9175-4F52-A840-8A007D076495}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D176618-9175-4F52-A840-8A007D076495}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9D176618-9175-4F52-A840-8A007D076495}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F526286-DDCC-4E8D-AE2A-DEA9D0B16177}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F526286-DDCC-4E8D-AE2A-DEA9D0B16177}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F526286-DDCC-4E8D-AE2A-DEA9D0B16177}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F526286-DDCC-4E8D-AE2A-DEA9D0B16177}.Release|Any CPU.Build.0 = Release|Any CPU
 		{46048778-E0A0-4580-93E7-3785E11877B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{46048778-E0A0-4580-93E7-3785E11877B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46048778-E0A0-4580-93E7-3785E11877B3}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -81,7 +81,7 @@ jobs:
     needs: get-release
     uses: SevenSoftware7/publish-dotnet-packages-to-nuget/.github/workflows/release.yml@master
     with:
-      projects: '["Seven.Boundless.Injection", "Seven.Boundless.Injection.Generators"]'
+      projects: '["Seven.Boundless.Injection", "Seven.Boundless.Injection.Godot", "Seven.Boundless.Injection.Generators"]'
       release-upload-url: ${{ needs.get-release.outputs.upload_url }}
       skip-duplicate: ${{ github.event_name == 'workflow_dispatch' }}
     secrets:
