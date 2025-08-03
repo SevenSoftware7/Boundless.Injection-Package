@@ -5,31 +5,77 @@ on:
     types: [published]
   repository_dispatch:
     types: [release]
+  workflow_dispatch:
+    inputs:
+      releaseId:
+        description: 'Release id'
+        required: false
+        type: number
+      tag:
+        description: 'Tag name'
+        required: false
+        type: string
+      commitSha:
+        description: 'SHA of commit'
+        required: false
+        type: string
+      releaseName:
+        description: 'Release name (returns most recent found)'
+        required: false
+        type: string
+      releaseNameRegEx:
+        description: 'Release name regex (returns most recent found)'
+        required: false
+        type: string
+      latest:
+        description: 'Set to `true` to get the latest release'
+        required: false
+        type: boolean
 
 jobs:
   get-release:
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.get_release_dispatch.outputs.upload_url || steps.get_release_release.outputs.upload_url }}
+      upload_url: ${{ steps.get_release_release.outputs.upload_url || steps.get_release_repository_dispatch.outputs.upload_url || steps.get_release_workflow_dispatch.outputs.upload_url }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Get release from dispatch
+    - name: Get release from release event
+      if: github.event_name == 'release' && github.event.action == 'published'
+      id: get_release_release
+      uses: bruceadams/get-release@v1.3.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get release from repository dispatch
       uses: cardinalby/git-get-release-action@v1
       if: github.event_name == 'repository_dispatch' && github.event.action == 'release' && github.event.client_payload.commit_sha
-      id: get_release_dispatch
+      id: get_release_repository_dispatch
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         commitSha: ${{ github.event.client_payload.commit_sha }}
 
-    - name: Get release from release event
-      if: github.event_name == 'release' || github.event.action == 'published'
-      id: get_release_release
-      uses: bruceadams/get-release@v1.3.2
+    - name: Get release from workflow dispatch
+      uses: cardinalby/git-get-release-action@v1
+      if: github.event_name == 'workflow_dispatch' && (inputs.releaseId || inputs.tag || inputs.commitSha || inputs.releaseName || inputs.releaseNameRegEx || inputs.latest)
+      id: get_release_workflow_dispatch
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        releaseId: ${{ inputs.releaseId }}
+        tag: ${{ inputs.tag }}
+        commitSha: ${{ inputs.commitSha }}
+        releaseName: ${{ inputs.releaseName }}
+        releaseNameRegEx: ${{ inputs.releaseNameRegEx }}
+        latest: ${{ inputs.latest }}
+
+    - name: Verify Release
+      if: steps.get_release_release.outcome != 'success' && steps.get_release_repository_dispatch.outcome != 'success' && steps.get_release_workflow_dispatch.outcome != 'success'
+      run:
+        echo "Invalid Release input"
+        exit 1
 
   create-project-release:
     needs: get-release
@@ -37,5 +83,6 @@ jobs:
     with:
       projects: '["Seven.Boundless.Injection", "Seven.Boundless.Injection.Generators"]'
       release-upload-url: ${{ needs.get-release.outputs.upload_url }}
+      skip-duplicate: ${{ github.event_name == 'workflow_dispatch' }}
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
