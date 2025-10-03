@@ -11,38 +11,39 @@ using Seven.Boundless.Injection;
 /// <seealso cref="IInjectionNode"/>
 /// <seealso cref="Node"/>
 public readonly struct GodotNodeInjectionNode : IInjectionNode {
-	public readonly Node GodotNode;
-
-
-	public GodotNodeInjectionNode(Node godotNode) {
-		ArgumentNullException.ThrowIfNull(godotNode);
-		GodotNode = godotNode;
-	}
-
-
 	/// <summary>
-	/// Returns the underlying Godot.Node of the current node.
+	/// The underlying Godot node.
 	/// </summary>
-	public readonly Node UnderlyingObject => GodotNode;
-	readonly object IInjectionNode.UnderlyingObject => UnderlyingObject;
+	public readonly Node UnderlyingNode;
+	readonly object IInjectionNode.UnderlyingObject => UnderlyingNode;
 
 	/// <inheritdoc/>
-	public readonly IInjectionNode? Parent => GodotNode.GetParent() is Node parent ? new GodotNodeInjectionNode(parent) : null;
+	public readonly string NodeName => UnderlyingNode.Name;
+
+	/// <inheritdoc/>
+	public readonly IInjectionNode? Parent => UnderlyingNode.GetParent() is Node parent ? new GodotNodeInjectionNode(parent) : null;
+
+	/// <inheritdoc/>
+	public readonly bool IsTreeReady =>
+		(UnderlyingNode.GetParent()?.IsNodeReady() ?? false) ||
+		(UnderlyingNode.GetTree()?.Root?.IsNodeReady() ?? false);
 
 	/// <inheritdoc/>
 	public readonly IEnumerable<IInjectionNode> Children {
 		get {
-			foreach (Node child in GodotNode.GetChildren()) {
+			foreach (Node child in UnderlyingNode.GetChildren()) {
 				yield return new GodotNodeInjectionNode(child);
 			}
 		}
 	}
 
-	/// <inheritdoc/>
-	public readonly bool IsTreeReady =>
-		(GodotNode.GetParent()?.IsNodeReady() ?? false) ||
-		(GodotNode.GetTree()?.Root?.IsNodeReady() ?? false);
 
-	/// <inheritdoc/>
-	public readonly string NodeName => GodotNode.Name;
+	/// <summary>
+	/// Initializes a new instance of the <see cref="GodotNodeInjectionNode"/>.
+	/// </summary>
+	/// <param name="godotNode">The underlying Godot node.</param>
+	public GodotNodeInjectionNode(Node godotNode) {
+		ArgumentNullException.ThrowIfNull(godotNode);
+		UnderlyingNode = godotNode;
+	}
 }
