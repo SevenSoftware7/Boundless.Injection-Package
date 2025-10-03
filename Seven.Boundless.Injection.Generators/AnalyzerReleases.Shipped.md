@@ -7,12 +7,12 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|--------------------
-BD0001  |  Injectable  |  Error | MissingPartialModifierOnInjectableMemberClass
-BD0002  |  Injectable  |  Error | InvalidInjectableMethodParameterCount
-BD0003  |  Injectable  |  Error | MissingSetterInInjectableProperty
-BD0004  |  Injectable  |  Error | ReadonlyInjectableField
-BD0101  |  Injector  |  Error | MissingPartialModifierOnInjectorMemberClass
-BD0102  |  Injector  |  Error | InvalidInjectorMethodParameterCount
-BD0103  |  Injector  |  Error | InvalidInjectorMethodReturnType
-BD0104  |  Injector  |  Error | MissingGetterInInjectorProperty
-BD0105  |  Injector  |  Error | MultipleSameTypeInjectorsInClass
+BD0000  | Injectable | Error | MissingPartialModifierOnInjectableMemberClass
+BD0001  | Injectable | Error | InvalidInjectableMethodParameterCount
+BD0002  | Injectable | Error | MissingSetterInInjectableProperty
+BD0003  | Injectable | Error | ReadonlyInjectableField
+BD0100  | Injector   | Error | MissingPartialModifierOnInjectorMemberClass
+BD0101  | Injector   | Error | InvalidInjectorMethodParameterCount
+BD0102  | Injector   | Error | InvalidInjectorMethodReturnType
+BD0103  | Injector   | Error | MissingGetterInInjectorProperty
+BD0104  | Injector   | Error | MultipleSameTypeInjectorsInClass
