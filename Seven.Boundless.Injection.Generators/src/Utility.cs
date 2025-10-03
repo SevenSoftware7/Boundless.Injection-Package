@@ -41,7 +41,7 @@ namespace Seven.Boundless.Injection.Generators {
 				case Accessibility.ProtectedOrInternal:
 					return "private protected";
 				default:
-					return "";
+					return string.Empty;
 			}
 		}
 	}
